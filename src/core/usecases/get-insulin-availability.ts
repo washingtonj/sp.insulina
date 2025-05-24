@@ -3,10 +3,11 @@ import type { AddressEntity } from '../entities/address';
 import type { AvailabilityEntity } from '../entities/availability';
 
 const PRE_DEFINED_CORDINATES: AddressEntity[] = [
+	// This address return all São Paulo units
 	{
-		address: 'Av. Nordestina, 4451 - Vila Nova Curuca, São Paulo - SP, 08032-000, Brazil',
-		latitude: -23.51787483496951,
-		longitude: -46.42170725543547
+		address: 'Alameda dos Jambos - Recanto Campo Belo, São Paulo - SP',
+		latitude: -22.6965292,
+		longitude: -46.716467
 	}
 ];
 
@@ -25,6 +26,13 @@ export class GetInsulinAvailability {
 			const response = await this.eSaudeService.getAvailability(insulins, address);
 			availability = availability.concat(response);
 		}
+
+		// Sort by the number of insulin types at level 3 (descending)
+		availability.sort((a, b) => {
+			const aLevel3 = a.quantity.filter((q) => q.level === 3).length;
+			const bLevel3 = b.quantity.filter((q) => q.level === 3).length;
+			return bLevel3 - aLevel3;
+		});
 
 		return availability;
 	}
