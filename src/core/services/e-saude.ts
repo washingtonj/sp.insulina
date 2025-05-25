@@ -65,23 +65,25 @@ class ESaudeTransform {
 				}
 			});
 
-			const quantity = (unit.quantidades || []).map((item: any) => {
-				// Try to match insulin by name from the static list, fallback to name only
-				const removeAccents = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-				const normalize = (str: string) =>
-					removeAccents(str)
-						.replace(/\s+/g, ' ')
-						.replace(/[^a-zA-Z0-9]/g, '')
-						.toLowerCase()
-						.trim();
+			const removeAccents = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+			const normalize = (str: string) =>
+				removeAccents(str)
+					.replace(/\s+/g, ' ')
+					.replace(/[^a-zA-Z0-9]/g, '')
+					.toLowerCase()
+					.trim();
 
+			const typeHeuristics: Record<string, (name: string) => boolean> = {
+				CANETA: (name) => name.includes('preenchido'),
+				AMPOLA: (name) => name.includes('fam10ml'),
+				REFILL: (name) => name.includes('carpule') || name.includes('tubete')
+			};
+
+			// Build a map of found insulins for this unit
+			const foundInsulins: Record<string, { quantity: number; level: 1 | 2 | 3 }> = {};
+
+			for (const item of unit.quantidades || []) {
 				const normalizedMedicamento = normalize(item.medicamento);
-
-				const typeHeuristics: Record<string, (name: string) => boolean> = {
-					CANETA: (name) => name.includes('preenchido'),
-					AMPOLA: (name) => name.includes('fam10ml'),
-					REFILL: (name) => name.includes('carpule') || name.includes('tubete')
-				};
 
 				const matchedInsulin = insulinsInfo.find((insulin) => {
 					const normalizedInsulinName = normalize(insulin.fullName);
@@ -90,8 +92,6 @@ class ESaudeTransform {
 					const typeHeuristic = typeHeuristics[insulinType];
 
 					const typeMatch = typeHeuristic ? typeHeuristic(normalizedMedicamento) : false;
-
-					// Stricter: require both type and simpleName to match
 					const simpleNameMatch = normalizedMedicamento.includes(normalizedInsulinSimple);
 
 					return (
@@ -102,22 +102,31 @@ class ESaudeTransform {
 					);
 				});
 
-				const insulin = new InsulinEntity({
-					code: matchedInsulin ? matchedInsulin.code : '',
-					fullName: item.medicamento,
-					simpleName: matchedInsulin ? matchedInsulin.simpleName : '',
-					type: matchedInsulin ? matchedInsulin.type : (undefined as any)
-				});
+				if (matchedInsulin) {
+					// Map API level to numeric: alto=3, medio=2, baixo=1
+					let level: 1 | 2 | 3 = 2;
+					if (item.nivelDisponibilidade === 'alto') level = 3;
+					else if (item.nivelDisponibilidade === 'baixo') level = 1;
 
-				// Map API level to numeric: alto=3, medio=2, baixo=1
-				let level: 1 | 2 | 3 = 2;
-				if (item.nivelDisponibilidade === 'alto') level = 3;
-				else if (item.nivelDisponibilidade === 'baixo') level = 1;
+					foundInsulins[matchedInsulin.code] = {
+						quantity: Number(item.quantidade),
+						level
+					};
+				}
+			}
 
+			// For all insulins, ensure each is present in the quantity array
+			const quantity = insulinsInfo.map((insulin) => {
+				const found = foundInsulins[insulin.code];
 				return {
-					insulin,
-					quantity: Number(item.quantidade),
-					level
+					insulin: new InsulinEntity({
+						code: insulin.code,
+						fullName: insulin.fullName,
+						simpleName: insulin.simpleName,
+						type: insulin.type
+					}),
+					quantity: found ? found.quantity : 0,
+					level: found ? found.level : 1 // Default to lowest level if not found
 				};
 			});
 
