@@ -1,6 +1,8 @@
 export class InsulinEntity {
 	code!: string;
-	name!: string;
+	fullName!: string;
+	type!: 'AMPOLA' | 'CANETA' | 'REFILL';
+	simpleName!: string;
 
 	constructor(data: InsulinEntity) {
 		Object.assign(this, data);

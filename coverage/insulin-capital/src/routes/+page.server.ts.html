@@ -3,15 +3,15 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for insulin-capital/src/routes/api/availability/+server.ts</title>
+    <title>Code coverage report for insulin-capital/src/routes/+page.server.ts</title>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../../../../../prettify.css" />
-    <link rel="stylesheet" href="../../../../../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../../../../../favicon.png" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style type='text/css'>
         .coverage-summary .sorter {
-            background-image: url(../../../../../sort-arrow-sprite.png);
+            background-image: url(../../../sort-arrow-sprite.png);
         }
     </style>
 </head>
@@ -19,13 +19,13 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../../../index.html">All files</a> / <a href="index.html">insulin-capital/src/routes/api/availability</a> +server.ts</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">insulin-capital/src/routes</a> +page.server.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
@@ -74,10 +74,7 @@
 <a name='L9'></a><a href='#L9'>9</a>
 <a name='L10'></a><a href='#L10'>10</a>
 <a name='L11'></a><a href='#L11'>11</a>
-<a name='L12'></a><a href='#L12'>12</a>
-<a name='L13'></a><a href='#L13'>13</a>
-<a name='L14'></a><a href='#L14'>14</a>
-<a name='L15'></a><a href='#L15'>15</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L12'></a><a href='#L12'>12</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -88,22 +85,16 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { RequestHandler } from './$types';
-<span class="cstat-no" title="statement not covered" >import { GetInsulinAvailability } from '../../../core/usecases/get-insulin-availability';</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { PageServerLoad } from './$types';
+<span class="cstat-no" title="statement not covered" >import { GetInsulinAvailability } from '../core/usecases/get-insulin-availability';</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export const GET: RequestHandler = async () =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >export const load: PageServerLoad = async () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >	const usecase = new GetInsulinAvailability();</span>
 <span class="cstat-no" title="statement not covered" >	const result = await usecase.execute();</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >	return new Response(JSON.stringify(result), {</span>
-<span class="cstat-no" title="statement not covered" >		status: 200,</span>
-<span class="cstat-no" title="statement not covered" >		headers: {</span>
-<span class="cstat-no" title="statement not covered" >			'Content-Type': 'application/json'</span>
-<span class="cstat-no" title="statement not covered" >		}</span>
-<span class="cstat-no" title="statement not covered" >	});</span>
+<span class="cstat-no" title="statement not covered" >	return {</span>
+<span class="cstat-no" title="statement not covered" >		availability: structuredClone(result)</span>
+<span class="cstat-no" title="statement not covered" >	};</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;</pre></td></tr></table></pre>
 
@@ -112,16 +103,16 @@
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-24T18:09:02.575Z
+                at 2025-05-24T20:05:39.382Z
             </div>
-        <script src="../../../../../prettify.js"></script>
+        <script src="../../../prettify.js"></script>
         <script>
             window.onload = function () {
                 prettyPrint();
             };
         </script>
-        <script src="../../../../../sorter.js"></script>
-        <script src="../../../../../block-navigation.js"></script>
+        <script src="../../../sorter.js"></script>
+        <script src="../../../block-navigation.js"></script>
     </body>
 </html>
     

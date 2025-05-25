@@ -34,11 +34,15 @@ const mockApiResponse = {
 const mockInsulins = [
 	new InsulinEntity({
 		code: '1106400904400049',
-		name: 'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10     ML'
+		fullName: 'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10     ML',
+		simpleName: 'INSULINA HUMANA NPH 100 UI/ML',
+		type: 'AMPOLA'
 	}),
 	new InsulinEntity({
 		code: '1106400904400057',
-		name: 'INSULINA HUMANA REGULAR 100 UI/ML SUSPENSÃO INJETÁVEL FAM 10 ML'
+		fullName: 'INSULINA HUMANA REGULAR 100 UI/ML SUSPENSÃO INJETÁVEL FAM 10 ML',
+		simpleName: 'INSULINA HUMANA REGULAR 100 UI/ML',
+		type: 'AMPOLA'
 	})
 ];
 
@@ -67,7 +71,9 @@ describe('ESaudeService', () => {
 		expect(Array.isArray(insulins)).toBe(true);
 		expect(insulins.length).toBeGreaterThan(0);
 		expect(insulins[0]).toHaveProperty('code');
-		expect(insulins[0]).toHaveProperty('name');
+		expect(insulins[0]).toHaveProperty('fullName');
+		expect(insulins[0]).toHaveProperty('simpleName');
+		expect(insulins[0]).toHaveProperty('type');
 	});
 
 	it('getAvailability should POST to the correct endpoint and transform the response', async () => {
@@ -86,9 +92,9 @@ describe('ESaudeService', () => {
 		// @ts-expect-error - options is not defined in the type
 		const body = JSON.parse(options!.body);
 		expect(body.data.medicamentos).toEqual(
-			mockInsulins.map(insulin => ({
+			mockInsulins.map((insulin) => ({
 				id: insulin.code,
-				name: insulin.name
+				name: insulin.fullName
 			}))
 		);
 		expect(body.data.coordenadas.lat).toBe(mockAddress.latitude);
@@ -101,12 +107,167 @@ describe('ESaudeService', () => {
 		expect(availability).toBeInstanceOf(AvailabilityEntity);
 		expect(availability.pickup.placeName).toBe('UBS TESTE');
 		expect(availability.pickup.address.address).toBe('RUA TESTE, 123');
-		expect(availability.quantity[0].insulin.name).toBe(
+		expect(availability.quantity[0].insulin.fullName).toBe(
 			'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10     ML'
 		);
 		expect(availability.quantity[0].insulin.code).toBe('1106400904400049');
+		expect(availability.quantity[0].insulin.type).toBe('AMPOLA');
 		expect(availability.quantity[0].quantity).toBe(18);
 		expect(availability.quantity[0].level).toBe(2);
+	});
+
+	it('should match CANETA insulin type correctly', async () => {
+		const canetaApiResponse = {
+			result: {
+				disponibilidade: [
+					{
+						unidade: 'UBS CANETA',
+						endereco: 'RUA CANETA, 1',
+						coordenadas: { lat: 0, lng: 0 },
+						quantidades: [
+							{
+								medicamento:
+									'INSULINA HUMANA REGULAR 100 UI/ML - SUSPENSAO INJETAVEL EM SISTEMA DE APLICACAO PREENCHIDO 3 ML',
+								quantidade: '85',
+								nivelDisponibilidade: 'alto'
+							}
+						]
+					}
+				]
+			}
+		};
+		const canetaInsulins = [
+			new InsulinEntity({
+				code: '1106400904400910',
+				fullName:
+					'INSULINA HUMANA REGULAR 100 UI/ML- SUSPENSÃO INJETÁVEL CANETA SISTEMA PREENCHIDO 3 ML',
+				simpleName: 'INSULINA HUMANA REGULAR 100 UI/ML',
+				type: 'CANETA'
+			})
+		];
+		fetchSpy.mockResolvedValueOnce({
+			json: async () => canetaApiResponse
+		} as unknown as Response);
+
+		const result = await service.getAvailability(canetaInsulins, mockAddress);
+		expect(result[0].quantity[0].insulin.type).toBe('CANETA');
+		expect(result[0].quantity[0].insulin.code).toBe('1106400904400910');
+	});
+
+	it('should match AMPOLA insulin type correctly', async () => {
+		const ampolaApiResponse = {
+			result: {
+				disponibilidade: [
+					{
+						unidade: 'UBS AMPOLA',
+						endereco: 'RUA AMPOLA, 1',
+						coordenadas: { lat: 0, lng: 0 },
+						quantidades: [
+							{
+								medicamento: 'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10 ML',
+								quantidade: '50',
+								nivelDisponibilidade: 'alto'
+							}
+						]
+					}
+				]
+			}
+		};
+		const ampolaInsulins = [
+			new InsulinEntity({
+				code: '1106400904400049',
+				fullName: 'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10 ML',
+				simpleName: 'INSULINA HUMANA NPH 100 UI/ML',
+				type: 'AMPOLA'
+			})
+		];
+		fetchSpy.mockResolvedValueOnce({
+			json: async () => ampolaApiResponse
+		} as unknown as Response);
+
+		const result = await service.getAvailability(ampolaInsulins, mockAddress);
+		expect(result[0].quantity[0].insulin.type).toBe('AMPOLA');
+		expect(result[0].quantity[0].insulin.code).toBe('1106400904400049');
+	});
+
+	it('should match REFILL insulin type correctly', async () => {
+		const refillApiResponse = {
+			result: {
+				disponibilidade: [
+					{
+						unidade: 'UBS REFILL',
+						endereco: 'RUA REFILL, 1',
+						coordenadas: { lat: 0, lng: 0 },
+						quantidades: [
+							{
+								medicamento:
+									'INSULINA HUMANA NPH 100 UI/ML CARPULE TUBETE SUSPENSÃO INJETÁVEL 3 ML',
+								quantidade: '30',
+								nivelDisponibilidade: 'alto'
+							}
+						]
+					}
+				]
+			}
+		};
+		const refillInsulins = [
+			new InsulinEntity({
+				code: '1106400904401002',
+				fullName: 'INSULINA HUMANA NPH 100 UI/ML CARPULE TUBETE SUSPENSÃO INJETÁVEL 3 ML',
+				simpleName: 'INSULINA HUMANA NPH 100 UI/ML',
+				type: 'REFILL'
+			})
+		];
+		fetchSpy.mockResolvedValueOnce({
+			json: async () => refillApiResponse
+		} as unknown as Response);
+
+		const result = await service.getAvailability(refillInsulins, mockAddress);
+		expect(result[0].quantity[0].insulin.type).toBe('REFILL');
+		expect(result[0].quantity[0].insulin.code).toBe('1106400904401002');
+	});
+
+	it('should not mismatch NPH and REGULAR insulins', async () => {
+		const nphApiResponse = {
+			result: {
+				disponibilidade: [
+					{
+						unidade: 'UBS NPH',
+						endereco: 'RUA NPH, 1',
+						coordenadas: { lat: 0, lng: 0 },
+						quantidades: [
+							{
+								medicamento: 'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10 ML',
+								quantidade: '10',
+								nivelDisponibilidade: 'alto'
+							}
+						]
+					}
+				]
+			}
+		};
+		const insulins = [
+			new InsulinEntity({
+				code: '1106400904400049',
+				fullName: 'INSULINA HUMANA NPH 100 UI/ML SUSPENSAO INJETAVEL FAM 10 ML',
+				simpleName: 'INSULINA HUMANA NPH 100 UI/ML',
+				type: 'AMPOLA'
+			}),
+			new InsulinEntity({
+				code: '1106400904400057',
+				fullName: 'INSULINA HUMANA REGULAR 100 UI/ML SUSPENSÃO INJETÁVEL FAM 10 ML',
+				simpleName: 'INSULINA HUMANA REGULAR 100 UI/ML',
+				type: 'AMPOLA'
+			})
+		];
+		fetchSpy.mockResolvedValueOnce({
+			json: async () => nphApiResponse
+		} as unknown as Response);
+
+		const result = await service.getAvailability(insulins, mockAddress);
+		expect(result[0].quantity[0].insulin.type).toBe('AMPOLA');
+		expect(result[0].quantity[0].insulin.code).toBe('1106400904400049');
+		expect(result[0].quantity[0].insulin.fullName).toContain('NPH');
 	});
 
 	it('getAvailability should handle empty disponibilidade gracefully', async () => {
@@ -149,7 +310,7 @@ describe('ESaudeService', () => {
 
 		const result = await service.getAvailability([], mockAddress);
 		expect(result[0].quantity[0].insulin.code).toBe('');
-		expect(result[0].quantity[0].insulin.name).toBe('UNKNOWN INSULIN');
+		expect(result[0].quantity[0].insulin.fullName).toBe('UNKNOWN INSULIN');
 		expect(result[0].quantity[0].level).toBe(3);
 	});
 });

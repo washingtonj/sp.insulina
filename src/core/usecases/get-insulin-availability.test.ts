@@ -5,8 +5,8 @@ import type { InsulinEntity } from '../entities/insulin';
 import type { AvailabilityEntity } from '../entities/availability';
 
 const mockInsulins: InsulinEntity[] = [
-	{ code: '1', name: 'Insulin A' },
-	{ code: '2', name: 'Insulin B' }
+	{ code: '1', fullName: 'Insulin A', type: 'AMPOLA', simpleName: 'Insulin' },
+	{ code: '2', fullName: 'Insulin B', type: 'CANETA', simpleName: 'Insulin - Inject' }
 ];
 
 function createAvailability(pickupName: string, levels: (1 | 2 | 3)[]): AvailabilityEntity {
