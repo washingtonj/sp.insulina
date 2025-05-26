@@ -1,18 +1,12 @@
 <script lang="ts">
-	type Insulin = {
-		insulin: { code: string; simpleName: string; type: string };
-		level: number;
-		quantity: number;
-	};
+	import type { AvailabilityEntity } from '../../core/entities/availability';
 
-	interface Props {
-		pickup: { placeName: string; address: { address: string } };
-		quantity: Insulin[];
-		selectedInsulinCodes: string[];
-		distanceKm: number | null;
-	}
+	type Props = {
+		selectedInsulinCodes?: string[];
+		distanceKm?: number | null;
+	} & AvailabilityEntity;
 
-	let { pickup, quantity = [], selectedInsulinCodes = [], distanceKm = null } = $props<Props>();
+	let { pickup, quantity = [], selectedInsulinCodes = [], distanceKm = null }: Props = $props();
 
 	const selectedInsulins = $derived(
 		quantity.filter((q) => selectedInsulinCodes.includes(q.insulin.code))

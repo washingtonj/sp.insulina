@@ -15,16 +15,19 @@ export function filterByInsulinType(
 }
 
 /**
- * Filter availability data by multiple insulin codes
+ * Filter availability data by multiple insulin codes.
+ * Only includes locations that have ALL the selected insulin types with quantity > 0.
  */
 export function filterByInsulinCodes(
   data: AvailabilityEntity[],
   insulinCodes: string[] | null
 ): AvailabilityEntity[] {
-  if (!insulinCodes || insulinCodes.length === 0) return data;
+  if (!insulinCodes || insulinCodes.length === 0) return [];
   
   return data.filter(item => 
-    item.quantity.some(q => insulinCodes.includes(q.insulin.code))
+    insulinCodes.every(code => 
+      item.quantity.some(q => q.insulin.code === code && q.quantity > 0)
+    )
   );
 }
 
@@ -37,11 +40,14 @@ export function filterBySearchQuery(
 ): AvailabilityEntity[] {
   if (!searchQuery) return data;
   
-  const query = searchQuery.toLowerCase();
-  return data.filter(item => 
-    item.pickup.placeName.toLowerCase().includes(query) || 
-    item.pickup.address.address.toLowerCase().includes(query)
-  );
+  const query = searchQuery.trim().toLowerCase();
+  if (!query) return data;
+  
+  return data.filter(item => {
+    const name = item.pickup?.placeName?.toLowerCase() || '';
+    const address = item.pickup?.address?.address?.toLowerCase() || '';
+    return name.includes(query) || address.includes(query);
+  });
 }
 
 /**
@@ -54,7 +60,7 @@ export function filterByInsulinCode(
   if (!insulinCode) return data;
   
   return data.filter(item => 
-    item.quantity.some(q => q.insulin.code === insulinCode)
+    item.quantity.some(q => q.insulin.code === insulinCode && q.quantity > 0)
   );
 }
 
@@ -140,4 +146,33 @@ export function applyAllFilters(
   }
   
   return filtered;
+}
+
+/**
+ * Enriches availability data with metrics useful for sorting
+ */
+export function addSortingMetrics(
+  data: AvailabilityEntity[],
+  selectedInsulinCodes: string[]
+): (AvailabilityEntity & { minLevel: number; totalQty: number })[] {
+  return data.map(entity => {
+    const relevant = entity.quantity.filter(
+      q => selectedInsulinCodes.includes(q.insulin.code) && q.quantity > 0
+    );
+    
+    const minLevel = relevant.length > 0 
+      ? Math.min(...relevant.map(q => q.level)) 
+      : 0;
+      
+    const totalQty = relevant.reduce(
+      (sum, q) => sum + q.quantity, 
+      0
+    );
+    
+    return {
+      ...entity,
+      minLevel,
+      totalQty
+    };
+  });
 }

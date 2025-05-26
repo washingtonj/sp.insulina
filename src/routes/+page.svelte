@@ -14,11 +14,7 @@
 	</div>
 
 	<!-- Filter Component -->
-	<InsulinFilter
-		data={data.availability}
-		bind:filtered
-		bind:selectedInsulinCodes
-	/>
+	<InsulinFilter data={data.availability} bind:filtered bind:selectedInsulinCodes />
 
 	<div>
 		{#if filtered.length === 0}
@@ -31,7 +27,7 @@
 					<PickupCard
 						pickup={pickupObj.pickup}
 						quantity={pickupObj.quantity}
-						selectedInsulinCodes={selectedInsulinCodes}
+						{selectedInsulinCodes}
 						distanceKm={pickupObj.distanceKm ?? null}
 					/>
 				{/each}

@@ -22,10 +22,12 @@
 		}
 
 		if (type === 'multiple') {
-			return items
-				.filter((item) => selected!.includes(item.value))
-				.map((item) => item.label)
-				.join(', ');
+			const selectedItems = items.filter((item) => selected!.includes(item.value));
+			if (selectedItems.length === 1) {
+				return selectedItems[0].label;
+			} else {
+				return `${selectedItems[0].label} + ${selectedItems.length - 1} selecionados`;
+			}
 		}
 	});
 
