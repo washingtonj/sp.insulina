@@ -39,8 +39,18 @@ export function addDistanceToAvailability(
     const lng = entity.pickup?.address?.longitude;
     
     let distance: number | null = null;
-    if (typeof lat === 'number' && typeof lng === 'number') {
+    if (typeof lat === 'number' && typeof lng === 'number' && 
+        !isNaN(lat) && !isNaN(lng) &&
+        !isNaN(userLocation.lat) && !isNaN(userLocation.lng)) {
       distance = getDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
+      
+      // Validate the calculated distance
+      if (isNaN(distance) || !isFinite(distance)) {
+        distance = null;
+      } else {
+        // Round to 1 decimal place for better UX
+        distance = Math.round(distance * 10) / 10;
+      }
     }
     
     return {
@@ -59,8 +69,14 @@ export function sortByDistance(
   data: (AvailabilityEntity & { distanceKm: number | null })[]
 ): (AvailabilityEntity & { distanceKm: number | null })[] {
   // Filter out entries without valid distance information
-  const validDistances = data.filter(item => item.distanceKm !== null);
-  const noDistances = data.filter(item => item.distanceKm === null);
+  const validDistances = data.filter(item => 
+    item.distanceKm !== null && 
+    item.distanceKm !== undefined && 
+    !isNaN(item.distanceKm));
+  const noDistances = data.filter(item => 
+    item.distanceKm === null || 
+    item.distanceKm === undefined || 
+    isNaN(item.distanceKm));
   
   // Sort by distance
   const sorted = [...validDistances].sort((a, b) => 

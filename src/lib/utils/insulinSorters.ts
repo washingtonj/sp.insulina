@@ -58,8 +58,16 @@ export function sortByLevelAndQuantity(data: AvailabilityEntity[]): Availability
  */
 export function sortByDistance(data: EnrichedAvailabilityEntity[]): EnrichedAvailabilityEntity[] {
   // First filter out items with valid distances
-  const withDistance = data.filter(item => item.distanceKm !== null && item.distanceKm !== undefined);
-  const withoutDistance = data.filter(item => item.distanceKm === null || item.distanceKm === undefined);
+  const withDistance = data.filter(item => 
+    item.distanceKm !== null && 
+    item.distanceKm !== undefined && 
+    !isNaN(item.distanceKm)
+  );
+  const withoutDistance = data.filter(item => 
+    item.distanceKm === null || 
+    item.distanceKm === undefined || 
+    isNaN(item.distanceKm)
+  );
   
   // Sort items with distance by their distance value
   const sortedWithDistance = [...withDistance].sort((a, b) => 
@@ -102,8 +110,10 @@ export function sortIntelligent(
     // then by minimum level, then by total quantity
     return [...data].sort((a, b) => {
       // First ensure we handle undefined/null values
-      const aDistance = a.distanceKm ?? Number.POSITIVE_INFINITY;
-      const bDistance = b.distanceKm ?? Number.POSITIVE_INFINITY;
+      const aDistance = (a.distanceKm !== null && a.distanceKm !== undefined && !isNaN(a.distanceKm)) ? 
+        a.distanceKm : Number.POSITIVE_INFINITY;
+      const bDistance = (b.distanceKm !== null && b.distanceKm !== undefined && !isNaN(b.distanceKm)) ?
+        b.distanceKm : Number.POSITIVE_INFINITY;
       
       if (aDistance !== bDistance) {
         return aDistance - bDistance; // Closer first

@@ -22,7 +22,7 @@ export function filterByInsulinCodes(
   data: AvailabilityEntity[],
   insulinCodes: string[] | null
 ): AvailabilityEntity[] {
-  if (!insulinCodes || insulinCodes.length === 0) return [];
+  if (!insulinCodes || insulinCodes.length === 0) return data;
   
   return data.filter(item => 
     insulinCodes.every(code => 
@@ -46,7 +46,8 @@ export function filterBySearchQuery(
   return data.filter(item => {
     const name = item.pickup?.placeName?.toLowerCase() || '';
     const address = item.pickup?.address?.address?.toLowerCase() || '';
-    return name.includes(query) || address.includes(query);
+    const district = item.pickup?.address?.district?.toLowerCase() || '';
+    return name.includes(query) || address.includes(query) || district.includes(query);
   });
 }
 

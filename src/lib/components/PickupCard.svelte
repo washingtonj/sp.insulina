@@ -17,7 +17,7 @@
 	);
 </script>
 
-<li class="flex flex-col space-y-4 rounded-lg border border-gray-200 px-6 py-4">
+<li class="m-0 flex flex-col space-y-4 rounded-lg border border-gray-200 px-6 py-4">
 	<span>
 		<h3 class="text-xl font-bold">{pickup.placeName}</h3>
 		<p class="text-sm text-gray-500">{pickup.address.address}</p>
