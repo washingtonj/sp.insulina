@@ -55,6 +55,7 @@
 		"vitest": "^3.0.0"
 	},
 	"dependencies": {
-		"bits-ui": "^1.7.0"
+		"bits-ui": "^1.7.0",
+		"phosphor-svelte": "^3.0.1"
 	}
 }

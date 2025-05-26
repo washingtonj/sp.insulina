@@ -27,11 +27,23 @@ export class GetInsulinAvailability {
 			availability = availability.concat(response);
 		}
 
-		// Sort by the number of insulin types at level 3 (descending)
+		// Sort by the number of insulin types at level 3 (descending),
+		// then by the total quantity of insulin available (all levels, descending)
 		availability.sort((a, b) => {
-			const aLevel3 = a.quantity.filter((q) => q.level === 3).length;
-			const bLevel3 = b.quantity.filter((q) => q.level === 3).length;
-			return bLevel3 - aLevel3;
+			const aLevel3Types = a.quantity.filter((q) => q.level === 3);
+			const bLevel3Types = b.quantity.filter((q) => q.level === 3);
+
+			const aLevel3Count = aLevel3Types.length;
+			const bLevel3Count = bLevel3Types.length;
+
+			if (bLevel3Count !== aLevel3Count) {
+				return bLevel3Count - aLevel3Count;
+			}
+
+			const aTotalQuantity = a.quantity.reduce((sum, q) => sum + (q.quantity ?? 0), 0);
+			const bTotalQuantity = b.quantity.reduce((sum, q) => sum + (q.quantity ?? 0), 0);
+
+			return bTotalQuantity - aTotalQuantity;
 		});
 
 		return availability;
