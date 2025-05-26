@@ -12,8 +12,21 @@
 		<!-- Left sidebar - fixed position -->
 		<div class="flex flex-col gap-4 p-4 lg:sticky lg:top-0 lg:h-screen lg:max-w-xl">
 			<div class="flex flex-col">
-				<h1 class="text-3xl font-bold">Insulina Capital</h1>
-				<p>Disponibilidade de insulina na capital do estado de São Paulo.</p>
+				<h1 class="flex flex-col items-start text-3xl font-bold">
+					<div class="flex items-center">
+						<span class="text-blue-600">sp.</span>
+						<span class="text-gray-800">insulina</span>
+					</div>
+					<div class="-mt-3 ml-8 w-32">
+						<svg
+							viewBox="0 0 100 15"
+							xmlns="http://www.w3.org/2000/svg"
+							class="fill-current text-blue-400"
+						>
+							<path d="M0,7.5 C15,0 35,15 50,7.5 C65,0 85,15 100,7.5" />
+						</svg>
+					</div>
+				</h1>
 			</div>
 
 			<!-- Filter Component -->
