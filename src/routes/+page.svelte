@@ -56,7 +56,7 @@
 					Nenhum local encontrado com os filtros selecionados.
 				</div>
 			{:else}
-				<ul class="mb-8 flex flex-col space-y-2 lg:grid lg:grid-cols-2 lg:gap-4">
+				<ul class="mb-8 flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-4">
 					{#each filtered as pickupObj (pickupObj.pickup.placeName)}
 						<PickupCard
 							pickup={pickupObj.pickup}
