@@ -3,7 +3,9 @@
 	import PickupCard from '$lib/components/PickupCard.svelte';
 
 	let { data } = $props();
-	let filtered = $state([...data.availability]);
+	let { pickups } = data;
+
+	let filtered = $state([...pickups]);
 	let selectedInsulinCodes = $state([]);
 </script>
 
@@ -30,7 +32,7 @@
 			</div>
 
 			<!-- Filter Component -->
-			<InsulinFilter data={data.availability} bind:filtered bind:selectedInsulinCodes />
+			<InsulinFilter data={pickups} bind:filtered bind:selectedInsulinCodes />
 
 			<p class="rounded-lg bg-gray-100 p-4 text-sm text-gray-500">
 				Interface simplificada para visualização dos dados públicos do sistema <b>e-saude</b> da prefeitura
@@ -57,12 +59,12 @@
 				</div>
 			{:else}
 				<ul class="mb-8 flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-4">
-					{#each filtered as pickupObj (pickupObj.pickup.placeName)}
+					{#each filtered as { pickup, quantity, distanceKm } (pickup.placeName)}
 						<PickupCard
-							pickup={pickupObj.pickup}
-							quantity={pickupObj.quantity}
+							{pickup}
+							{quantity}
 							{selectedInsulinCodes}
-							distanceKm={pickupObj.distanceKm ?? null}
+							distanceKm={distanceKm ?? null}
 						/>
 					{/each}
 				</ul>
