@@ -1,10 +1,12 @@
 import { type AddressEntity, addDistance } from './address';
 import type { AvailabilityEntity } from './availability';
+import type { BusinessHourEntity } from './businessHour';
 
 export interface PickupEntity {
 	name: string;
 	address: AddressEntity;
 	availability: AvailabilityEntity[];
+	businessHours: BusinessHourEntity[];
 }
 
 export function extractAvailableInsulins(pickups: PickupEntity[]) {

@@ -97,8 +97,8 @@
 				</div>
 			{:else}
 				<ul class="mb-8 flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-4">
-					{#each pickupsFiltered as { address, availability, name } (name)}
-						<PickupCard {name} {address} {availability} {requestedInsulins} />
+					{#each pickupsFiltered as { address, availability, name, businessHours } (name)}
+						<PickupCard {businessHours} {name} {address} {availability} {requestedInsulins} />
 					{/each}
 				</ul>
 			{/if}

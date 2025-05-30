@@ -2,6 +2,7 @@ import type { InsulinEntity } from '$core/entities/insulin';
 import type { AvailabilityEntity } from '$core/entities/availability';
 import type { PickupEntity } from '$core/entities/pickup';
 import { STATIC_INSULINS } from './consts';
+import { transformBusinessHours } from './transformBusinessHours';
 
 const removeAccents = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const normalize = (str: string) =>
@@ -89,6 +90,8 @@ export function fromGetAvailability(response: any): PickupEntity[] {
 		const foundInsulins = processAvailableInsulins(unit.quantidades || []);
 		const availability = createAvailabilityEntities(foundInsulins);
 
+		const businessHours = transformBusinessHours(unit.expediente || '');
+		
 		return {
 			name: unit.unidade,
 			address: {
@@ -96,7 +99,8 @@ export function fromGetAvailability(response: any): PickupEntity[] {
 				latitude: unit.coordenadas.lat,
 				longitude: unit.coordenadas.lng
 			},
-			availability
+			availability,
+			businessHours
 		};
 	});
 
