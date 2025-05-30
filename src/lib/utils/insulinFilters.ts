@@ -1,5 +1,6 @@
 import type { InsulinEntity } from '$core/entities/insulin';
 import type { PickupEntity } from '$core/entities/pickup';
+import { has24hService, hasWeekendService } from '$core/entities/businessHour';
 
 export function filterByInsulinCodes(
 	data: PickupEntity[],
@@ -30,11 +31,31 @@ export function filterBySearchQuery(
 	});
 }
 
+export function filterBy24hService(
+	data: PickupEntity[],
+	is24hOnly: boolean
+): PickupEntity[] {
+	if (!is24hOnly) return data;
+	
+	return data.filter((item) => has24hService(item.businessHours));
+}
+
+export function filterByWeekendService(
+	data: PickupEntity[],
+	isWeekendOnly: boolean
+): PickupEntity[] {
+	if (!isWeekendOnly) return data;
+	
+	return data.filter((item) => hasWeekendService(item.businessHours));
+}
+
 export function applyFilters(
 	data: PickupEntity[],
 	filters: {
 		requestedInsulins?: InsulinEntity[];
 		searchQuery?: string;
+		is24hOnly?: boolean;
+		isWeekendOnly?: boolean;
 	}
 ): PickupEntity[] {
 	let filtered = [...data];
@@ -46,6 +67,14 @@ export function applyFilters(
 
 	if (filters.searchQuery) {
 		filtered = filterBySearchQuery(filtered, filters.searchQuery);
+	}
+
+	if (filters.is24hOnly) {
+		filtered = filterBy24hService(filtered, filters.is24hOnly);
+	}
+
+	if (filters.isWeekendOnly) {
+		filtered = filterByWeekendService(filtered, filters.isWeekendOnly);
 	}
 
 	return filtered;

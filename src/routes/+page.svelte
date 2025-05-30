@@ -13,6 +13,8 @@
 
 	let searchQuery = $state('');
 	let isOrderByNearest = $state(false);
+	let is24hOnly = $state(false);
+	let isWeekendOnly = $state(false);
 	let requestedInsulins = $state<InsulinEntity[]>([]);
 
 	let availableInsulins = $derived(extractAvailableInsulins(pickups));
@@ -29,7 +31,13 @@
 	});
 
 	let pickupsFiltered = $derived.by(() => {
-		let filtered = applyFilters(pickupsWithLocation, { searchQuery, requestedInsulins });
+		let filtered = applyFilters(pickupsWithLocation, { 
+			searchQuery, 
+			requestedInsulins,
+			is24hOnly,
+			isWeekendOnly
+		});
+		
 		filtered = applySorters(filtered, requestedInsulins);
 		return filtered;
 	});
@@ -64,6 +72,8 @@
 				bind:requestedInsulins
 				bind:searchQuery
 				bind:isOrderByNearest
+				bind:is24hOnly
+				bind:isWeekendOnly
 				{availableInsulins}
 				{totals}
 				{location}

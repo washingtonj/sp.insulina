@@ -2,17 +2,7 @@
 	import type { InsulinEntity } from '$core/entities/insulin';
 	import type { PickupEntity } from '$core/entities/pickup';
 	import type { BusinessHourEntity } from '$core/entities/businessHour';
-
-	// Day abbreviations for compact display
-	const DayAbbreviations: Record<number, string> = {
-		0: 'Dom',
-		1: 'Seg',
-		2: 'Ter',
-		3: 'Qua',
-		4: 'Qui',
-		5: 'Sex',
-		6: 'Sáb'
-	};
+	import { DayAbbreviations, has24hService } from '$core/entities/businessHour';
 
 	// Business hours display types
 	type BusinessHoursDisplay = {
@@ -178,7 +168,7 @@
 	}
 
 	const businessHoursDisplay = $derived(getBusinessHoursDisplay(businessHours));
-	const has24hService = $derived(businessHoursDisplay.is24h);
+	const is24h = $derived(has24hService(businessHours));
 </script>
 
 <li class="m-0 flex flex-col space-y-4 rounded-lg border border-gray-200 px-6 py-4">
@@ -189,16 +179,26 @@
 			<p class="mt-1 text-xs text-blue-600">{address.distance.toFixed(1)} km de distância</p>
 		{/if}
 		<div class="mt-2 flex gap-1">
-			{#if has24hService}
+			{#if is24h}
 				<p class="w-fit rounded-lg bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
 					Aberto 24h
 				</p>
 			{:else}
-				{#each [businessHoursDisplay.weekdays, businessHoursDisplay.weekend, businessHoursDisplay.other].filter(Boolean) as displayText (displayText)}
-					<p class="w-fit rounded-lg bg-gray-100 px-2 py-1 text-xs text-gray-600">
-						{displayText}
+				{#if businessHoursDisplay.weekdays}
+					<p class="w-fit rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+						{businessHoursDisplay.weekdays}
 					</p>
-				{/each}
+				{/if}
+				{#if businessHoursDisplay.weekend}
+					<p class="w-fit rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600">
+						{businessHoursDisplay.weekend}
+					</p>
+				{/if}
+				{#if businessHoursDisplay.other}
+					<p class="w-fit rounded-lg bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+						{businessHoursDisplay.other}
+					</p>
+				{/if}
 			{/if}
 		</div>
 	</span>
