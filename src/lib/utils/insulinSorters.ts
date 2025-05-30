@@ -1,163 +1,65 @@
 import type { AvailabilityEntity } from '../../core/entities/availability';
-
-export type SortOption = 'level3-count' | 'total-quantity' | 'level-and-quantity' | 'distance' | 'min-level';
-
-type EnrichedAvailabilityEntity = AvailabilityEntity & {
-  minLevel?: number;
-  totalQty?: number;
-  distanceKm?: number | null;
-};
+import type { PickupEntity } from '../../core/entities/pickup';
+import type { InsulinEntity } from '../../core/entities/insulin';
 
 /**
- * Sort by number of level 3 insulin types (descending)
+ * Sorts pickups by balancing distance (when available), insulin levels and quantities.
+ * Prioritizes requested insulins when available.
+ * Returns the most relevant pickups first based on a scoring system.
  */
-export function sortByLevel3Count(data: AvailabilityEntity[]): AvailabilityEntity[] {
-  return [...data].sort((a, b) => {
-    const aLevel3Count = a.quantity.filter(q => q.level === 3).length;
-    const bLevel3Count = b.quantity.filter(q => q.level === 3).length;
-    return bLevel3Count - aLevel3Count;
-  });
-}
+export function applySorters(data: PickupEntity[], requestedInsulins: InsulinEntity[] = []): PickupEntity[] {
+	return [...data].sort((a, b) => {
+		// Score based on insulin levels and quantities (0-100)
+		const getInsulinScore = (availability: AvailabilityEntity[], requestedCodes: string[] = []) => {
+			// If we have requested insulins, only consider those
+			const relevantAvailability = requestedCodes.length > 0
+				? availability.filter(a => requestedCodes.includes(a.insulin.code))
+				: availability;
 
-/**
- * Sort by total insulin quantity (descending)
- */
-export function sortByTotalQuantity(data: AvailabilityEntity[]): AvailabilityEntity[] {
-  return [...data].sort((a, b) => {
-    const aTotal = a.quantity.reduce((sum, q) => sum + q.quantity, 0);
-    const bTotal = b.quantity.reduce((sum, q) => sum + q.quantity, 0);
-    return bTotal - aTotal;
-  });
-}
+			if (relevantAvailability.length === 0) return 0;
 
-/**
- * Sort by number of level 3 insulin types first, then by total quantity
- */
-export function sortByLevelAndQuantity(data: AvailabilityEntity[]): AvailabilityEntity[] {
-  return [...data].sort((a, b) => {
-    const aLevel3Types = a.quantity.filter(q => q.level === 3);
-    const bLevel3Types = b.quantity.filter(q => q.level === 3);
-    
-    const aLevel3Count = aLevel3Types.length;
-    const bLevel3Count = bLevel3Types.length;
-    
-    if (bLevel3Count !== aLevel3Count) {
-      return bLevel3Count - aLevel3Count;
-    }
-    
-    const aTotalQuantity = a.quantity.reduce((sum, q) => sum + q.quantity, 0);
-    const bTotalQuantity = b.quantity.reduce((sum, q) => sum + q.quantity, 0);
-    
-    return bTotalQuantity - aTotalQuantity;
-  });
-}
+			const totalQuantity = relevantAvailability.reduce((acc, q) => acc + q.quantity, 0);
+			const level3Count = relevantAvailability.filter(q => q.level === 3).length;
+			const maxLevel = Math.max(...relevantAvailability.map(q => q.level));
 
-/**
- * Sort by distance (ascending) when distance information is available
- * Items without distance information will appear at the end
- */
-export function sortByDistance(data: EnrichedAvailabilityEntity[]): EnrichedAvailabilityEntity[] {
-  // First filter out items with valid distances
-  const withDistance = data.filter(item => 
-    item.distanceKm !== null && 
-    item.distanceKm !== undefined && 
-    !isNaN(item.distanceKm)
-  );
-  const withoutDistance = data.filter(item => 
-    item.distanceKm === null || 
-    item.distanceKm === undefined || 
-    isNaN(item.distanceKm)
-  );
-  
-  // Sort items with distance by their distance value
-  const sortedWithDistance = [...withDistance].sort((a, b) => 
-    (a.distanceKm as number) - (b.distanceKm as number)
-  );
-  
-  // Return combined array with sorted distances first, then items without distance
-  return [...sortedWithDistance, ...withoutDistance];
-}
+			// Score components:
+			// - Level 3 count (40%): Most important for critical needs
+			// - Coverage (20%): How many of the requested insulins are available
+			// - Max level (20%): Highest insulin level available
+			// - Quantity (20%): Total quantity available
+			const level3Score = Math.min(level3Count / 2, 1) * 40; // Cap at 2 level 3 items
+			const coverageScore = requestedCodes.length > 0
+				? (relevantAvailability.length / requestedCodes.length) * 20
+				: 20;
+			const levelScore = (maxLevel / 3) * 20;
+			const quantityScore = Math.min(totalQuantity / 20, 1) * 20; // Cap at 20 units
 
-/**
- * Sort by minimum insulin level first, then total quantity
- */
-export function sortByMinLevelAndQuantity(data: EnrichedAvailabilityEntity[]): EnrichedAvailabilityEntity[] {
-  return [...data].sort((a, b) => {
-    const aMinLevel = a.minLevel ?? 0;
-    const bMinLevel = b.minLevel ?? 0;
-    
-    if (bMinLevel !== aMinLevel) {
-      return bMinLevel - aMinLevel; // Higher level first
-    }
-    
-    const aTotalQty = a.totalQty ?? 0;
-    const bTotalQty = b.totalQty ?? 0;
-    
-    return bTotalQty - aTotalQty; // Higher quantity first
-  });
-}
+			return level3Score + coverageScore + levelScore + quantityScore;
+		};
 
-/**
- * Advanced sorting with multiple criteria, optimized for finding
- * the best available insulin locations
- */
-export function sortIntelligent(
-  data: EnrichedAvailabilityEntity[],
-  useLocation: boolean = false
-): EnrichedAvailabilityEntity[] {
-  if (useLocation) {
-    // When location is enabled, sort by distance first,
-    // then by minimum level, then by total quantity
-    return [...data].sort((a, b) => {
-      // First ensure we handle undefined/null values
-      const aDistance = (a.distanceKm !== null && a.distanceKm !== undefined && !isNaN(a.distanceKm)) ? 
-        a.distanceKm : Number.POSITIVE_INFINITY;
-      const bDistance = (b.distanceKm !== null && b.distanceKm !== undefined && !isNaN(b.distanceKm)) ?
-        b.distanceKm : Number.POSITIVE_INFINITY;
-      
-      if (aDistance !== bDistance) {
-        return aDistance - bDistance; // Closer first
-      }
-      
-      // Then sort by minimum level (higher is better)
-      const aMinLevel = a.minLevel ?? 0;
-      const bMinLevel = b.minLevel ?? 0;
-      
-      if (bMinLevel !== aMinLevel) {
-        return bMinLevel - aMinLevel;
-      }
-      
-      // Finally sort by total quantity (higher is better)
-      const aTotalQty = a.totalQty ?? 0;
-      const bTotalQty = b.totalQty ?? 0;
-      
-      return bTotalQty - aTotalQty;
-    });
-  } else {
-    // When location is not enabled, sort by minimum level first
-    // then by total quantity
-    return sortByMinLevelAndQuantity(data);
-  }
-}
+		const requestedCodes = requestedInsulins.map(insulin => insulin.code);
 
-/**
- * Apply sorting based on the selected option
- */
-export function sortAvailability(
-  data: AvailabilityEntity[] | EnrichedAvailabilityEntity[], 
-  sortOption: SortOption
-): AvailabilityEntity[] {
-  switch (sortOption) {
-    case 'level3-count':
-      return sortByLevel3Count(data);
-    case 'total-quantity':
-      return sortByTotalQuantity(data);
-    case 'distance':
-      return sortByDistance(data as EnrichedAvailabilityEntity[]);
-    case 'min-level':
-      return sortByMinLevelAndQuantity(data as EnrichedAvailabilityEntity[]);
-    case 'level-and-quantity':
-    default:
-      return sortByLevelAndQuantity(data);
-  }
+		// Calculate base scores from insulin availability
+		const aInsulinScore = getInsulinScore(a.availability, requestedCodes);
+		const bInsulinScore = getInsulinScore(b.availability, requestedCodes);
+
+		// If both addresses have distance, include it in scoring
+		if (a.address.distance != null && b.address.distance != null) {
+			// Distance score (0-100, lower distance = higher score)
+			const getDistanceScore = (distance: number) => Math.max(0, 100 - distance * 2);
+
+			const aDistanceScore = getDistanceScore(a.address.distance);
+			const bDistanceScore = getDistanceScore(b.address.distance);
+
+			// Combined score (distance 20%, insulin 80%)
+			// Give more weight to insulin score to prefer well-stocked locations
+			const aScore = aDistanceScore * 0.2 + aInsulinScore * 0.8;
+			const bScore = bDistanceScore * 0.2 + bInsulinScore * 0.8;
+
+			return bScore - aScore;
+		}
+
+		// If no distance available, sort by insulin score only
+		return bInsulinScore - aInsulinScore;
+	});
 }

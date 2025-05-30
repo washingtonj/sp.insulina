@@ -1,109 +1,56 @@
 <script lang="ts">
-	import type { AvailabilityEntity } from '$core/entities/availability';
-	import {
-		extractUniqueInsulins,
-		filterByInsulinCodes,
-		filterBySearchQuery,
-		addSortingMetrics
-	} from '$lib/utils/insulinFilters';
-	import { sortIntelligent } from '$lib/utils/insulinSorters';
-	import { addDistanceToAvailability } from '$lib/utils/locationUtils';
-	import UiSelect from '$lib/components/ui/UiSelect.svelte';
+	import LocationIcon from 'phosphor-svelte/lib/Gps';
+	import UiSelect from './ui/UiSelect.svelte';
 	import UiButton from './ui/UiButton.svelte';
 	import UiInput from './ui/UiInput.svelte';
-	import LocationIcon from 'phosphor-svelte/lib/Gps';
+	import type { InsulinEntity } from '$core/entities/insulin';
 
 	type Props = {
-		data: AvailabilityEntity[];
-		filtered: AvailabilityEntity[];
-		selectedInsulinCodes?: string[];
+		searchQuery: string;
+		requestedInsulins: InsulinEntity[];
+		availableInsulins: InsulinEntity[];
+		isOrderByNearest: boolean;
+		location: {
+			isLoading: boolean;
+			error?: string;
+		};
+		totals: {
+			data: number;
+			filtered: number;
+		};
+		onOrderByNearest: () => void;
 	};
 
 	let {
-		data = [],
-		filtered = $bindable([]),
-		selectedInsulinCodes = $bindable([])
+		searchQuery = $bindable(''),
+		requestedInsulins = $bindable([]),
+		isOrderByNearest = $bindable(false),
+		onOrderByNearest,
+		availableInsulins,
+		totals,
+		location
 	}: Props = $props();
 
-	let searchQuery = $state('');
-	let orderByNearest = $state(false);
-	let userLocation = $state<{ lat: number; lng: number } | null>(null);
-	let locationError = $state('');
-
-	let allInsulins = $derived(extractUniqueInsulins(data));
-	let locationActive = $derived(orderByNearest && userLocation !== null);
-	let locationLoading = $state(false);
-
-	// Initialize filters when component is loaded
-	$effect(() => {
-		applyFilters();
-	});
-
-	function applyFilters() {
-		// Start with all data
-		let filteredResult = [...data];
-
-		// 1. Apply insulin code filter if codes are selected
-		if (selectedInsulinCodes.length > 0) {
-			filteredResult = filterByInsulinCodes(filteredResult, selectedInsulinCodes);
+	function handleSelectInsulins(codes: string[] | string) {
+		if (typeof codes === 'string') {
+			codes = [codes];
 		}
 
-		// 2. Apply search query filter
-		if (searchQuery) {
-			filteredResult = filterBySearchQuery(filteredResult, searchQuery);
-		}
-
-		// 3. Add metrics for sorting
-		let enhancedData = addSortingMetrics(filteredResult, selectedInsulinCodes);
-
-		// 4. Add distance data if needed
-		if (orderByNearest && userLocation !== null) {
-			enhancedData = addDistanceToAvailability(enhancedData, userLocation);
-		}
-
-		// 5. Apply intelligent sorting
-		filtered = sortIntelligent(enhancedData, orderByNearest && userLocation !== null);
+		requestedInsulins = codes
+			.map((code) => availableInsulins.find((insulin) => insulin.code === code))
+			.filter((insulin) => insulin !== undefined);
 	}
 
-	function resetFilters() {
+	function handleClearFilters() {
 		searchQuery = '';
-		orderByNearest = false;
-		selectedInsulinCodes = [];
-		filtered = data;
+		requestedInsulins = [];
+		isOrderByNearest = false;
 	}
 
-	function handleLocationClick() {
-		if (!navigator.geolocation) {
-			locationError = 'Geolocalização não suportada neste navegador.';
-			return;
-		}
-
-		// Toggle off if already active
-		if (orderByNearest && userLocation !== null) {
-			orderByNearest = false;
-			applyFilters();
-			return;
-		}
-
-		locationError = '';
-		locationLoading = true;
-
-		navigator.geolocation.getCurrentPosition(
-			(pos) => {
-				userLocation = {
-					lat: pos.coords.latitude,
-					lng: pos.coords.longitude
-				};
-				orderByNearest = true;
-				locationLoading = false;
-				applyFilters();
-			},
-			() => {
-				locationError = 'Não foi possível obter sua localização.';
-				orderByNearest = false;
-				locationLoading = false;
-			}
-		);
+	function handleOrderByNearest() {
+		if (location.isLoading) return;
+		if (!isOrderByNearest) onOrderByNearest();
+		isOrderByNearest = !isOrderByNearest;
 	}
 </script>
 
@@ -112,16 +59,12 @@
 		<div>
 			<label class="items-center gap-2 text-sm font-medium text-gray-700">
 				Buscar por nome do posto ou endereço
-				<UiInput
-					onInput={applyFilters}
-					placeholder="Digite para buscar..."
-					bind:value={searchQuery}
-				/>
+				<UiInput placeholder="Digite para buscar..." bind:value={searchQuery} />
 			</label>
-			{#if locationError}
-				<div class="mt-1 text-xs text-red-600">{locationError}</div>
+			{#if location.error}
+				<div class="mt-1 text-xs text-red-600">{location.error}</div>
 			{/if}
-			{#if locationActive}
+			{#if isOrderByNearest}
 				<div class="mt-1 text-xs text-blue-600">Ordenando por proximidade da sua localização.</div>
 			{/if}
 		</div>
@@ -129,27 +72,27 @@
 		<label class="block text-sm font-medium text-gray-700">
 			Selecionar Insulinas
 			<UiSelect
-				items={allInsulins.map((insulin) => ({
+				items={availableInsulins.map((insulin) => ({
 					value: insulin.code,
 					label: `${insulin.simpleName} (${insulin.type})`
 				}))}
 				type="multiple"
-				bind:selected={selectedInsulinCodes}
+				selected={requestedInsulins.map((insulin) => insulin.code)}
 				placeholder="Selecione as insulinas"
-				onSelect={() => applyFilters()}
+				onSelect={handleSelectInsulins}
 			/>
 		</label>
 	</div>
 
 	<div class="mt-4 flex items-center justify-between">
 		<div class="text-sm text-gray-500">
-			Exibindo {filtered.length} de {data.length} locais
+			Exibindo {totals.filtered} de {totals.data} locais
 		</div>
 
 		<div class="flex space-x-2">
-			<UiButton variant={locationActive ? 'primary' : 'ghost'} onClick={handleLocationClick}>
+			<UiButton variant={isOrderByNearest ? 'primary' : 'ghost'} onClick={handleOrderByNearest}>
 				<div class="flex items-center">
-					{#if locationLoading}
+					{#if location.isLoading}
 						<div
 							class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
 						></div>
@@ -158,7 +101,7 @@
 					{/if}
 				</div>
 			</UiButton>
-			<UiButton variant="secondary" onClick={resetFilters}>Limpar Filtros</UiButton>
+			<UiButton variant="secondary" onClick={handleClearFilters}>Limpar Filtros</UiButton>
 		</div>
 	</div>
 </div>

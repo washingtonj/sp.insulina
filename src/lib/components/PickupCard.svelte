@@ -1,28 +1,28 @@
 <script lang="ts">
-	import type { AvailabilityEntity } from '../../core/entities/availability';
+	import type { InsulinEntity } from '$core/entities/insulin';
+	import type { PickupEntity } from '$core/entities/pickup';
 
 	type Props = {
-		selectedInsulinCodes?: string[];
-		distanceKm?: number | null;
-	} & AvailabilityEntity;
+		requestedInsulins?: InsulinEntity[];
+	} & PickupEntity;
 
-	let { pickup, quantity = [], selectedInsulinCodes = [], distanceKm = null }: Props = $props();
+	let { name, address, availability = [], requestedInsulins = [] }: Props = $props();
 
 	const selectedInsulins = $derived(
-		quantity.filter((q) => selectedInsulinCodes.includes(q.insulin.code))
+		availability.filter((q) => requestedInsulins.find((i) => i.code === q.insulin.code))
 	);
 
 	const otherInsulins = $derived(
-		quantity.filter((q) => !selectedInsulinCodes.includes(q.insulin.code))
+		availability.filter((q) => !requestedInsulins.find((i) => i.code === q.insulin.code))
 	);
 </script>
 
 <li class="m-0 flex flex-col space-y-4 rounded-lg border border-gray-200 px-6 py-4">
 	<span>
-		<h3 class="text-xl font-bold">{pickup.placeName}</h3>
-		<p class="text-sm text-gray-500">{pickup.address.address}</p>
-		{#if distanceKm !== null}
-			<p class="mt-1 text-xs text-blue-600">Distância: {distanceKm.toFixed(1)} km</p>
+		<h3 class="text-xl font-bold">{name}</h3>
+		<p class="text-sm text-gray-500">{address.address}</p>
+		{#if address.distance}
+			<p class="mt-1 text-xs text-blue-600">{address.distance.toFixed(1)} km de distância</p>
 		{/if}
 	</span>
 

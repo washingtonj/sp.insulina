@@ -1,12 +1,40 @@
 <script lang="ts">
 	import InsulinFilter from '$lib/components/InsulinFilter.svelte';
 	import PickupCard from '$lib/components/PickupCard.svelte';
+	import { userState, setLocation } from '$lib/stores/user.svelte.js';
+	import type { InsulinEntity } from '$core/entities/insulin.js';
+	import { calcPickupDistance, extractAvailableInsulins } from '$core/entities/pickup.js';
+	import { applyFilters } from '$lib/utils/insulinFilters.js';
+	import { applySorters } from '$lib/utils/insulinSorters.js';
 
 	let { data } = $props();
 	let { pickups } = data;
+	let { location } = userState;
 
-	let filtered = $state([...pickups]);
-	let selectedInsulinCodes = $state([]);
+	let searchQuery = $state('');
+	let isOrderByNearest = $state(false);
+	let requestedInsulins = $state<InsulinEntity[]>([]);
+
+	let availableInsulins = $derived(extractAvailableInsulins(pickups));
+
+	let pickupsWithLocation = $derived.by(() => {
+		if (!location.data) return pickups;
+
+		return pickups.map((pickup) =>
+			calcPickupDistance(pickup, {
+				lat: location.data!.latitude,
+				lng: location.data!.longitude
+			})
+		);
+	});
+
+	let pickupsFiltered = $derived.by(() => {
+		let filtered = applyFilters(pickupsWithLocation, { searchQuery, requestedInsulins });
+		filtered = applySorters(filtered, requestedInsulins);
+		return filtered;
+	});
+
+	let totals = $derived({ data: pickups.length, filtered: pickupsFiltered.length });
 </script>
 
 <main class="relative m-auto flex max-w-full flex-col">
@@ -32,7 +60,17 @@
 			</div>
 
 			<!-- Filter Component -->
-			<InsulinFilter data={pickups} bind:filtered bind:selectedInsulinCodes />
+			<InsulinFilter
+				bind:requestedInsulins
+				bind:searchQuery
+				bind:isOrderByNearest
+				{availableInsulins}
+				{totals}
+				{location}
+				onOrderByNearest={() => {
+					if (!location.data) setLocation();
+				}}
+			/>
 
 			<p class="rounded-lg bg-gray-100 p-4 text-sm text-gray-500">
 				Interface simplificada para visualização dos dados públicos do sistema <b>e-saude</b> da prefeitura
@@ -53,19 +91,14 @@
 
 		<!-- Right content - scrollable -->
 		<div class="flex-1 p-4">
-			{#if filtered.length === 0}
+			{#if pickupsFiltered.length === 0}
 				<div class="py-8 text-center text-gray-500">
 					Nenhum local encontrado com os filtros selecionados.
 				</div>
 			{:else}
 				<ul class="mb-8 flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-4">
-					{#each filtered as { pickup, quantity, distanceKm } (pickup.placeName)}
-						<PickupCard
-							{pickup}
-							{quantity}
-							{selectedInsulinCodes}
-							distanceKm={distanceKm ?? null}
-						/>
+					{#each pickupsFiltered as { address, availability, name } (name)}
+						<PickupCard {name} {address} {availability} {requestedInsulins} />
 					{/each}
 				</ul>
 			{/if}

@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { fromGetAvailability } from '../transform';
-import { AvailabilityEntity } from '$core/entities/availability';
 
 describe('fromGetAvailability', () => {
-	it('should transform API response to AvailabilityEntity array', () => {
+	it('should transform API response to PickupEntity array', () => {
 		const mockApiResponse = {
 			result: {
 				disponibilidade: [
@@ -33,13 +32,13 @@ describe('fromGetAvailability', () => {
 
 		expect(Array.isArray(result)).toBe(true);
 		expect(result.length).toBe(1);
-		expect(result[0]).toBeInstanceOf(AvailabilityEntity);
 
-		const availability = result[0];
-		expect(availability.pickup.placeName).toBe('UBS TESTE');
-		expect(availability.pickup.address.address).toBe('RUA TESTE, 123');
-		expect(availability.pickup.address.latitude).toBe(-23.5);
-		expect(availability.pickup.address.longitude).toBe(-46.4);
+		const pickup = result[0];
+		expect(pickup.name).toBe('UBS TESTE');
+		expect(pickup.address.address).toBe('RUA TESTE, 123');
+		expect(pickup.address.latitude).toBe(-23.5);
+		expect(pickup.address.longitude).toBe(-46.4);
+		expect(Array.isArray(pickup.availability)).toBe(true);
 	});
 
 	it('should correctly match CANETA type insulin', () => {
@@ -64,10 +63,12 @@ describe('fromGetAvailability', () => {
 		};
 
 		const result = fromGetAvailability(canetaApiResponse);
-		const insulin = result[0].quantity.find((q) => q.quantity > 0)?.insulin;
+		const insulinAvailability = result[0].availability.find((a) => a.quantity > 0);
 
-		expect(insulin?.type).toBe('CANETA');
-		expect(insulin?.code).toBe('1106400904400910');
+		expect(insulinAvailability?.insulin.type).toBe('CANETA');
+		expect(insulinAvailability?.insulin.code).toBe('1106400904400910');
+		expect(insulinAvailability?.quantity).toBe(85);
+		expect(insulinAvailability?.level).toBe(3);
 	});
 
 	it('should correctly match AMPOLA type insulin', () => {
@@ -91,10 +92,12 @@ describe('fromGetAvailability', () => {
 		};
 
 		const result = fromGetAvailability(ampolaApiResponse);
-		const insulin = result[0].quantity.find((q) => q.quantity > 0)?.insulin;
+		const insulinAvailability = result[0].availability.find((a) => a.quantity > 0);
 
-		expect(insulin?.type).toBe('AMPOLA');
-		expect(insulin?.code).toBe('1106400904400049');
+		expect(insulinAvailability?.insulin.type).toBe('AMPOLA');
+		expect(insulinAvailability?.insulin.code).toBe('1106400904400049');
+		expect(insulinAvailability?.quantity).toBe(50);
+		expect(insulinAvailability?.level).toBe(3);
 	});
 
 	it('should correctly match REFILL type insulin', () => {
@@ -119,10 +122,12 @@ describe('fromGetAvailability', () => {
 		};
 
 		const result = fromGetAvailability(refillApiResponse);
-		const insulin = result[0].quantity.find((q) => q.quantity > 0)?.insulin;
+		const insulinAvailability = result[0].availability.find((a) => a.quantity > 0);
 
-		expect(insulin?.type).toBe('REFILL');
-		expect(insulin?.code).toBe('1106400904401002');
+		expect(insulinAvailability?.insulin.type).toBe('REFILL');
+		expect(insulinAvailability?.insulin.code).toBe('1106400904401002');
+		expect(insulinAvailability?.quantity).toBe(30);
+		expect(insulinAvailability?.level).toBe(3);
 	});
 
 	it('should correctly map availability levels', () => {
@@ -151,22 +156,30 @@ describe('fromGetAvailability', () => {
 		};
 
 		const result = fromGetAvailability(apiResponse);
-		const quantities = result[0].quantity.filter((q) => q.quantity > 0);
+		const availableInsulins = result[0].availability.filter((a) => a.quantity > 0);
 
-		const nphInsulin = quantities.find((q) =>
-			q.insulin?.simpleName.includes('INSULINA HUMANA NPH')
+		const nphInsulin = availableInsulins.find((a) =>
+			a.insulin.simpleName.includes('INSULINA HUMANA NPH')
 		);
-		const regularInsulin = quantities.find((q) =>
-			q.insulin?.simpleName.includes('INSULINA HUMANA REGULAR')
+		const regularInsulin = availableInsulins.find((a) =>
+			a.insulin.simpleName.includes('INSULINA HUMANA REGULAR')
 		);
 
 		expect(nphInsulin?.level).toBe(1); // baixo
 		expect(regularInsulin?.level).toBe(2); // médio
+		expect(nphInsulin?.quantity).toBe(10);
+		expect(regularInsulin?.quantity).toBe(20);
 	});
 
 	it('should handle empty disponibilidade', () => {
 		const emptyResponse = { result: { disponibilidade: [] } };
 		const result = fromGetAvailability(emptyResponse);
+		expect(result).toEqual([]);
+	});
+
+	it('should handle missing disponibilidade', () => {
+		const invalidResponse = { result: {} };
+		const result = fromGetAvailability(invalidResponse);
 		expect(result).toEqual([]);
 	});
 });

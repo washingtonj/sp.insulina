@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ESaudeService } from '../service';
+import { getAvailability } from '../service';
 import { STATIC_INSULINS } from '../consts';
 
 describe('ESaudeService', () => {
-	let service: ESaudeService;
 	// @ts-expect-error - global.fetch is not defined in the type
 	let fetchSpy: ReturnType<typeof vi.spyOn<typeof global, 'fetch'>>;
 
 	beforeEach(() => {
-		service = new ESaudeService();
 		fetchSpy = vi.spyOn(global, 'fetch');
 	});
 
@@ -27,7 +25,7 @@ describe('ESaudeService', () => {
 			json: async () => mockResponse
 		} as unknown as Response);
 
-		await service.getAvailability();
+		await getAvailability();
 
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
 		const [url, options] = fetchSpy.mock.calls[0];
