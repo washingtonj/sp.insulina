@@ -1,6 +1,7 @@
 <script lang="ts">
 	import InsulinFilter from '$lib/components/InsulinFilter.svelte';
 	import PickupCard from '$lib/components/PickupCard.svelte';
+	import SeoHead from '$lib/components/SeoHead.svelte';
 	import { userState, setLocation } from '$lib/stores/user.svelte.js';
 	import type { InsulinEntity } from '$core/entities/insulin.js';
 	import { calcPickupDistance, extractAvailableInsulins } from '$core/entities/pickup.js';
@@ -45,6 +46,7 @@
 	let totals = $derived({ data: pickups.length, filtered: pickupsFiltered.length });
 </script>
 
+<SeoHead />
 <main class="relative m-auto flex max-w-full flex-col">
 	<div class="flex flex-col lg:flex-row">
 		<!-- Left sidebar - fixed position -->
