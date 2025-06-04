@@ -4,6 +4,7 @@
 	import UiButton from './ui/UiButton.svelte';
 	import UiInput from './ui/UiInput.svelte';
 	import type { InsulinEntity } from '$core/entities/insulin';
+	import { TypeAndNameSorter } from '$lib/utils/sorters';
 
 	type Props = {
 		searchQuery: string;
@@ -104,7 +105,7 @@
 		<label class="block text-sm font-medium text-gray-700">
 			Selecionar Insulinas
 			<UiSelect
-				items={availableInsulins.map((insulin) => ({
+				items={availableInsulins.sort(TypeAndNameSorter).map((insulin) => ({
 					value: insulin.code,
 					label: `${insulin.simpleName} (${insulin.type})`
 				}))}

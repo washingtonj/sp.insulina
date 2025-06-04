@@ -3,6 +3,7 @@
 	import type { PickupEntity } from '$core/entities/pickup';
 	import type { BusinessHourEntity } from '$core/entities/businessHour';
 	import { DayAbbreviations, has24hService } from '$core/entities/businessHour';
+	import { TypeAndNameSorter } from '$lib/utils/sorters';
 
 	// Business hours display types
 	type BusinessHoursDisplay = {
@@ -25,11 +26,15 @@
 	}: Props = $props();
 
 	const selectedInsulins = $derived(
-		availability.filter((q) => requestedInsulins.find((i) => i.code === q.insulin.code))
+		availability
+			.filter((q) => requestedInsulins.find((i) => i.code === q.insulin.code))
+			.sort((a, b) => TypeAndNameSorter(a.insulin, b.insulin))
 	);
 
 	const otherInsulins = $derived(
-		availability.filter((q) => !requestedInsulins.find((i) => i.code === q.insulin.code))
+		availability
+			.filter((q) => !requestedInsulins.find((i) => i.code === q.insulin.code))
+			.sort((a, b) => TypeAndNameSorter(a.insulin, b.insulin))
 	);
 
 	// Group hours by time pattern

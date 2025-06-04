@@ -4,8 +4,8 @@
 	import { userState, setLocation } from '$lib/stores/user.svelte.js';
 	import type { InsulinEntity } from '$core/entities/insulin.js';
 	import { calcPickupDistance, extractAvailableInsulins } from '$core/entities/pickup.js';
-	import { applyFilters } from '$lib/utils/insulinFilters.js';
-	import { applySorters } from '$lib/utils/insulinSorters.js';
+	import { applyFilters } from '$lib/utils/filters.js';
+	import { applySorters } from '$lib/utils/sorters.js';
 
 	let { data } = $props();
 	let { pickups } = data;
@@ -31,13 +31,13 @@
 	});
 
 	let pickupsFiltered = $derived.by(() => {
-		let filtered = applyFilters(pickupsWithLocation, { 
-			searchQuery, 
+		let filtered = applyFilters(pickupsWithLocation, {
+			searchQuery,
 			requestedInsulins,
 			is24hOnly,
 			isWeekendOnly
 		});
-		
+
 		filtered = applySorters(filtered, requestedInsulins);
 		return filtered;
 	});
