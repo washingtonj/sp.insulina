@@ -73,6 +73,7 @@ export function D1Pickups(D1Database: D1Database): PickupRepository {
       )
         .bind(pickup.name)
         .first<{ id: number }>();
+
       return newRow!.id;
     }
     return pickupRow.id;
@@ -92,6 +93,7 @@ export function D1Pickups(D1Database: D1Database): PickupRepository {
       )
         .bind(insulin.code)
         .first<{ id: number }>();
+
       return newRow!.id;
     }
 
@@ -99,25 +101,37 @@ export function D1Pickups(D1Database: D1Database): PickupRepository {
   }
 
   async function syncNewAvailabilities(pickups: PickupEntity[]): Promise<void> {
+    let pickupCount = 0;
     for (const pickup of pickups) {
+      pickupCount++;
+
       const pickupId = await getOrCreatePickup(pickup);
 
-      for (const availability of pickup.availability) {
-        const insulinId = await getOrCreateInsulin(availability.insulin);
+      // Prepare all insulinId lookups in parallel for this pickup
+      const insulinIdMap: Record<string, number> = {};
+      await Promise.all(
+        pickup.availability.map(async (availability) => {
+          const insulinId = await getOrCreateInsulin(availability.insulin);
+          insulinIdMap[availability.insulin.code] = insulinId;
+        }),
+      );
 
-        await D1Database.prepare(
+      // Batch upsert all availabilities for this pickup
+      const statements = pickup.availability.map((availability) =>
+        D1Database.prepare(
           `INSERT INTO availabilities (pickup_id, insulin_id, quantity, availabilityLevel, checked_at)
              VALUES (?, ?, ?, ?, ?)
              ON CONFLICT(pickup_id, insulin_id, checked_at) DO UPDATE SET quantity = excluded.quantity, availabilityLevel = excluded.availabilityLevel`,
-        )
-          .bind(
-            pickupId,
-            insulinId,
-            availability.quantity,
-            availability.level,
-            new Date().toISOString(),
-          )
-          .run();
+        ).bind(
+          pickupId,
+          insulinIdMap[availability.insulin.code],
+          availability.quantity,
+          availability.level,
+          (availability as any).checked_at ?? new Date().toISOString(),
+        ),
+      );
+      if (statements.length > 0) {
+        await D1Database.batch(statements);
       }
     }
   }
