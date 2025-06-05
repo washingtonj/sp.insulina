@@ -1,0 +1,15 @@
+{
+  "name": "@sp-insulina/server",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+  },
+  "dependencies": {
+    "hono": "^4.7.11",
+    "@sp-insulina/core": "*"
+  },
+  "devDependencies": {
+    "wrangler": "^4.4.0"
+  }
+}
