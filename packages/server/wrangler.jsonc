@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "server",
   "main": "src/index.ts",
-  "compatibility_date": "2025-06-05"
+  "compatibility_date": "2025-06-05",
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],
@@ -21,13 +21,13 @@
   //     "bucket_name": "my-bucket"
   //   }
   // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
+  "d1_databases": [
+    {
+      "binding": "MY_DB",
+      "database_name": "sp-insulinas",
+      "database_id": "e434ae61-f87e-4d67-8a2c-fbe3f517c167",
+    },
+  ],
   // "ai": {
   //   "binding": "AI"
   // },
