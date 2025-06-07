@@ -15,8 +15,10 @@ CREATE TABLE pickups (
   uuid TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL UNIQUE,
   address_id INTEGER NOT NULL,
-  FOREIGN KEY (address_id) REFERENCES addresses(id)
+  FOREIGN KEY (address_id) REFERENCES addresses(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_pickups_address_id ON pickups(address_id);
 
 -- Table: business_hours
 CREATE TABLE business_hours (
@@ -25,15 +27,18 @@ CREATE TABLE business_hours (
   day_of_week INTEGER NOT NULL, -- 0=Sunday, 6=Saturday
   open_time TEXT NOT NULL,      -- e.g., '09:00'
   close_time TEXT NOT NULL,     -- e.g., '17:00'
-  FOREIGN KEY (pickup_id) REFERENCES pickups(id)
+  FOREIGN KEY (pickup_id) REFERENCES pickups(id) ON DELETE CASCADE
 );
+
+CREATE INDEX idx_business_hours_pickup_id ON business_hours(pickup_id);
 
 -- Table: insulins
 CREATE TABLE insulins (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  uuid TEXT NOT NULL UNIQUE,
   code TEXT NOT NULL UNIQUE,
-  name TEXT
+  name TEXT NOT NULL,
+  simpleName TEXT NOT NULL,
+  type TEXT NOT NULL -- e.g., 'CANETA', 'AMPOLA', 'REFILL'
 );
 
 -- Table: availabilities
@@ -43,11 +48,12 @@ CREATE TABLE availabilities (
   insulin_id INTEGER NOT NULL,
   quantity INTEGER NOT NULL,
   availabilityLevel INTEGER NOT NULL, -- 0=unknown, 1=low, 2=medium, 3=high
-  checked_at DATETIME NOT NULL,
-  FOREIGN KEY (pickup_id) REFERENCES pickups(id),
-  FOREIGN KEY (insulin_id) REFERENCES insulins(id)
-  -- Optionally, add UNIQUE(pickup_id, insulin_id, checked_at) if you want to prevent duplicate samples for the same time
+  checked_at TEXT NOT NULL,
+  FOREIGN KEY (pickup_id) REFERENCES pickups(id) ON DELETE CASCADE,
+  FOREIGN KEY (insulin_id) REFERENCES insulins(id),
+  UNIQUE(pickup_id, insulin_id, checked_at)
 );
 
--- Optional: Add a unique constraint to prevent duplicate samples for the same pickup, insulin, and timestamp
-CREATE UNIQUE INDEX idx_availabilities_unique ON availabilities(pickup_id, insulin_id, checked_at);
+CREATE INDEX idx_availabilities_pickup_id ON availabilities(pickup_id);
+CREATE INDEX idx_availabilities_insulin_id ON availabilities(insulin_id);
+CREATE INDEX idx_availabilities_checked_at ON availabilities(checked_at);

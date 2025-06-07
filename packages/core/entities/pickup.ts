@@ -1,35 +1,36 @@
-import { type AddressEntity, addDistance } from './address';
-import type { AvailabilityEntity } from './availability';
-import type { BusinessHourEntity } from './businessHour';
+import { type AddressEntity, addDistance } from "./address";
+import type { AvailabilityEntity } from "./availability";
+import type { BusinessHourEntity } from "./businessHour";
 
 export interface PickupEntity {
-	name: string;
-	address: AddressEntity;
-	availability: AvailabilityEntity[];
-	businessHours: BusinessHourEntity[];
+  id?: string;
+  name: string;
+  address: AddressEntity;
+  availability: AvailabilityEntity[];
+  businessHours: BusinessHourEntity[];
 }
 
 export function extractAvailableInsulins(pickups: PickupEntity[]) {
-	const insulinSet = new Set<string>();
-	const insulins = [];
+  const insulinSet = new Set<string>();
+  const insulins = [];
 
-	for (const pickup of pickups) {
-		for (const { insulin } of pickup.availability) {
-			const key = insulin.code;
-			if (!insulinSet.has(key)) {
-				insulinSet.add(key);
-				insulins.push(insulin);
-			}
-		}
-	}
+  for (const pickup of pickups) {
+    for (const { insulin } of pickup.availability) {
+      const key = insulin.code;
+      if (!insulinSet.has(key)) {
+        insulinSet.add(key);
+        insulins.push(insulin);
+      }
+    }
+  }
 
-	return insulins;
+  return insulins;
 }
 
 export function calcPickupDistance(
-	pickup: PickupEntity,
-	location: { lat: number; lng: number }
+  pickup: PickupEntity,
+  location: { lat: number; lng: number },
 ): PickupEntity {
-	const addressWithDistance = addDistance(pickup.address, location);
-	return { ...pickup, address: addressWithDistance };
+  const addressWithDistance = addDistance(pickup.address, location);
+  return { ...pickup, address: addressWithDistance };
 }

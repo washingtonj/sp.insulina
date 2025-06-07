@@ -42,7 +42,7 @@ function findMatchingInsulin(
   normalizedMedicamento: string,
 ): InsulinEntity | undefined {
   return STATIC_INSULINS.find((insulin) => {
-    const normalizedInsulinName = normalize(insulin.fullName);
+    const normalizedInsulinName = normalize(insulin.name);
     const normalizedInsulinSimple = normalize(insulin.simpleName);
     const typeHeuristic = typeHeuristics[insulin.type];
 
@@ -76,7 +76,7 @@ function createAvailabilityEntities(
     return {
       insulin: {
         code: insulin.code,
-        fullName: insulin.fullName,
+        name: insulin.name,
         simpleName: insulin.simpleName,
         type: insulin.type,
       },

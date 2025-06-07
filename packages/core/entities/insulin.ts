@@ -1,6 +1,6 @@
 export interface InsulinEntity {
-	fullName: string;
-	simpleName: string;
-	code: string;
-	type: 'AMPOLA' | 'CANETA' | 'REFILL';
+  name: string;
+  simpleName: string;
+  code: string;
+  type: "AMPOLA" | "CANETA" | "REFILL";
 }

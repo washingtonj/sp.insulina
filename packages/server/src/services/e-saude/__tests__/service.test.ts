@@ -1,47 +1,47 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getAvailability } from '../service';
-import { STATIC_INSULINS } from '../consts';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { getAvailability } from "../service";
+import { STATIC_INSULINS } from "../consts";
 
-describe('ESaudeService', () => {
-	// @ts-expect-error - global.fetch is not defined in the type
-	let fetchSpy: ReturnType<typeof vi.spyOn<typeof global, 'fetch'>>;
+describe("ESaudeService", () => {
+  // @ts-expect-error - global.fetch is not defined in the type
+  let fetchSpy: ReturnType<typeof vi.spyOn<typeof global, "fetch">>;
 
-	beforeEach(() => {
-		fetchSpy = vi.spyOn(global, 'fetch');
-	});
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(global, "fetch");
+  });
 
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-	it('should make POST request with correct data', async () => {
-		const mockResponse = {
-			result: {
-				disponibilidade: []
-			}
-		};
+  it("should make POST request with correct data", async () => {
+    const mockResponse = {
+      result: {
+        disponibilidade: [],
+      },
+    };
 
-		fetchSpy.mockResolvedValueOnce({
-			json: async () => mockResponse
-		} as unknown as Response);
+    fetchSpy.mockResolvedValueOnce({
+      json: async () => mockResponse,
+    } as unknown as Response);
 
-		await getAvailability();
+    await getAvailability();
 
-		expect(fetchSpy).toHaveBeenCalledTimes(1);
-		const [url, options] = fetchSpy.mock.calls[0];
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchSpy.mock.calls[0];
 
-		expect(url).toContain('/disponilidadesParaMedicamentos');
-		expect(options!.method).toBe('POST');
-		// @ts-expect-error - options is not defined in the type
-		expect(options!.headers?.['Content-Type']).toBe('application/json');
+    expect(url).toContain("/disponilidadesParaMedicamentos");
+    expect(options!.method).toBe("POST");
+    // @ts-expect-error - options is not defined in the type
+    expect(options!.headers?.["Content-Type"]).toBe("application/json");
 
-		// @ts-expect-error - options is not defined in the type
-		const body = JSON.parse(options!.body);
-		expect(body.data.medicamentos).toEqual(
-			STATIC_INSULINS.map((insulin) => ({
-				id: insulin.code,
-				name: insulin.fullName
-			}))
-		);
-	});
+    // @ts-expect-error - options is not defined in the type
+    const body = JSON.parse(options!.body);
+    expect(body.data.medicamentos).toEqual(
+      STATIC_INSULINS.map((insulin) => ({
+        id: insulin.code,
+        name: insulin.name,
+      })),
+    );
+  });
 });

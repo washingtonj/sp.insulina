@@ -12,7 +12,7 @@ export async function getAvailability() {
       data: {
         medicamentos: STATIC_INSULINS.map((insulin) => ({
           id: insulin.code,
-          name: insulin.fullName,
+          name: insulin.name,
         })),
         coordenadas: {
           lat: PRE_DEFINED_CORDINATES.latitude,
