@@ -1,7 +1,7 @@
 import { PickupEntity } from "@sp-insulina/core/entities/pickup";
 import { PickupRepository } from "@sp-insulina/core/interfaces/pickup-repository";
 import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import {
   addressesModel,
   availabilitiesModel,
@@ -64,6 +64,8 @@ export function pickupRepositoryWithD1(db: D1Database): PickupRepository {
 
       let availabilitiesToBeAdded = [];
 
+      const checkDate = new Date().toISOString();
+
       for (const pickup of pickups) {
         const pickupDatabseId = pickupsCode.find((p) => p.uuid === pickup.id);
 
@@ -98,7 +100,7 @@ export function pickupRepositoryWithD1(db: D1Database): PickupRepository {
             insulin_id: insulinId,
             quantity: availability.quantity,
             availabilityLevel: availability.level,
-            checked_at: new Date().toISOString(),
+            checked_at: checkDate,
           });
         }
       }
@@ -111,6 +113,19 @@ export function pickupRepositoryWithD1(db: D1Database): PickupRepository {
     },
 
     async getAllPickups(): Promise<PickupEntity[]> {
+      const latestAvailabilities = drizzleDb
+        .select({
+          pickup_id: availabilitiesModel.pickup_id,
+          insulin_id: availabilitiesModel.insulin_id,
+          max_checked_at: sql`MAX(${availabilitiesModel.checked_at})`.as(
+            "max_checked_at",
+          ),
+        })
+        .from(availabilitiesModel)
+        .groupBy(availabilitiesModel.pickup_id, availabilitiesModel.insulin_id)
+        .as("latest_availabilities");
+
+      // 2. Main query with join on latest availabilities
       const results = await drizzleDb
         .select({
           pickup: pickupsModel,
@@ -129,8 +144,19 @@ export function pickupRepositoryWithD1(db: D1Database): PickupRepository {
           eq(pickupsModel.id, businessHoursModel.pickup_id),
         )
         .leftJoin(
+          latestAvailabilities,
+          and(eq(latestAvailabilities.pickup_id, pickupsModel.id)),
+        )
+        .leftJoin(
           availabilitiesModel,
-          eq(pickupsModel.id, availabilitiesModel.pickup_id),
+          and(
+            eq(availabilitiesModel.pickup_id, latestAvailabilities.pickup_id),
+            eq(availabilitiesModel.insulin_id, latestAvailabilities.insulin_id),
+            eq(
+              availabilitiesModel.checked_at,
+              latestAvailabilities.max_checked_at,
+            ),
+          ),
         )
         .leftJoin(
           insulinsModel,
