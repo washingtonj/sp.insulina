@@ -15,20 +15,6 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(logger());
 
 app.get("/", async (c) => {
-  try {
-    const db = drizzle(c.env.MY_DB);
-    await updateAvailability({
-      pickupRepository: pickupRepositoryWithD1(db),
-      pickupService: ESaudeService(),
-    });
-    return c.text(`Sync completed.pickups updated.`);
-  } catch (error) {
-    console.error("Error during sync:", error);
-    return c.text("An error occurred during the sync process.", 500);
-  }
-});
-
-app.get("/pickups", async (c) => {
   const db = drizzle(c.env.MY_DB);
   const pickups = await getAllPickups({
     pickupRepository: pickupRepositoryWithD1(db),
@@ -37,4 +23,21 @@ app.get("/pickups", async (c) => {
   return c.json(pickups);
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  scheduled(
+    _controller: ScheduledController,
+    env: Bindings,
+    ctx: ExecutionContext,
+  ) {
+    async function syncPickups() {
+      const db = drizzle(env.MY_DB);
+      return updateAvailability({
+        pickupRepository: pickupRepositoryWithD1(db),
+        pickupService: ESaudeService(),
+      });
+    }
+
+    ctx.waitUntil(syncPickups());
+  },
+};

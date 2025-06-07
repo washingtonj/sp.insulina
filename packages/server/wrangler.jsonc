@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "server",
+  "name": "sp-insulina-server",
   "main": "index.ts",
   "compatibility_date": "2025-06-05",
   // "compatibility_flags": [
@@ -29,6 +29,9 @@
       "migrations_dir": "infrastructure/migrations",
     },
   ],
+  "triggers": {
+    "crons": ["0 * * * *"],
+  },
   // "ai": {
   //   "binding": "AI"
   // },

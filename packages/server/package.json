@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify",
     "test:unit": "vitest",
     "test": "npm run test:unit -- --run",
     "cf:migration": "wrangler d1 migrations apply sp-insulinas",
+    "cf:deploy": "wrangler deploy --minify",
     "cf:typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
