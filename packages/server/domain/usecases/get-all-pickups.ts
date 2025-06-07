@@ -1,4 +1,4 @@
-import { PickupRepository } from "$core/interfaces/pickup-repository";
+import { PickupRepository } from "domain/interfaces/pickup-repository";
 
 type Adapters = {
   pickupRepository: PickupRepository;

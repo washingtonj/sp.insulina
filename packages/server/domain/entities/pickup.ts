@@ -1,6 +1,6 @@
 import { type AddressEntity, addDistance } from "./address";
 import type { AvailabilityEntity } from "./availability";
-import type { BusinessHourEntity } from "./businessHour";
+import type { BusinessHourEntity } from "./business-hour";
 
 export interface PickupEntity {
   id?: string;

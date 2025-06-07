@@ -1,4 +1,4 @@
-import { PickupService } from "@sp-insulina/core/interfaces/pickup-service";
+import { PickupService } from "domain/interfaces/pickup-service";
 import { STATIC_INSULINS, PRE_DEFINED_CORDINATES, BASE_URL } from "./consts";
 import { fromGetAvailability } from "./transform";
 

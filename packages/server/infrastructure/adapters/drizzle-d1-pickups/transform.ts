@@ -1,4 +1,4 @@
-import { PickupEntity } from "@sp-insulina/core/entities/pickup";
+import { PickupEntity } from "domain/entities/pickup";
 
 /**
  * Transforms the raw joined rows from the getAllPickups query

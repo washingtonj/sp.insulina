@@ -1,8 +1,8 @@
-import type { InsulinEntity } from "@sp-insulina/core/entities/insulin";
-import type { AvailabilityEntity } from "@sp-insulina/core/entities/availability";
-import type { PickupEntity } from "@sp-insulina/core/entities/pickup";
+import type { InsulinEntity } from "domain/entities/insulin";
+import type { AvailabilityEntity } from "domain/entities/availability";
+import type { PickupEntity } from "domain/entities/pickup";
 import { STATIC_INSULINS } from "./consts";
-import { transformBusinessHours } from "./transformBusinessHours";
+import { transformBusinessHours } from "./transform-business-hours";
 
 const removeAccents = (str: string) =>
   str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");

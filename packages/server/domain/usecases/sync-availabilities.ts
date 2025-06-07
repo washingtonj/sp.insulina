@@ -1,6 +1,6 @@
-import { PickupEntity } from "$core/entities/pickup";
-import { PickupRepository } from "$core/interfaces/pickup-repository";
-import { PickupService } from "$core/interfaces/pickup-service";
+import { PickupEntity } from "domain/entities/pickup";
+import { PickupRepository } from "domain/interfaces/pickup-repository";
+import { PickupService } from "domain/interfaces/pickup-service";
 
 type Adapters = {
   pickupRepository: PickupRepository;

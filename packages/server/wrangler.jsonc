@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "server",
-  "main": "src/index.ts",
+  "main": "index.ts",
   "compatibility_date": "2025-06-05",
   // "compatibility_flags": [
   //   "nodejs_compat"
@@ -26,6 +26,7 @@
       "binding": "MY_DB",
       "database_name": "sp-insulinas",
       "database_id": "241dbd9b-40df-4f47-ad08-b33a4c1beed8",
+      "migrations_dir": "infrastructure/migrations",
     },
   ],
   // "ai": {

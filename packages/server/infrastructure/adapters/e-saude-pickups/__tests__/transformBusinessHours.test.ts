@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { transformBusinessHours } from "../transformBusinessHours";
-import type { BusinessHourEntity } from "@sp-insulina/core/entities/businessHour";
+import { transformBusinessHours } from "../transform-business-hours";
+import type { BusinessHourEntity } from "domain/entities/business-hour";
 
 function getOpenDays(businessHours: BusinessHourEntity[]) {
   return businessHours.filter((d) => d.isOpen).map((d) => d.dayOfWeek);

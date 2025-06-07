@@ -1,5 +1,5 @@
-import type { InsulinEntity } from "@sp-insulina/core/entities/insulin";
-import type { AddressEntity } from "@sp-insulina/core/entities/address";
+import type { InsulinEntity } from "domain/entities/insulin";
+import type { AddressEntity } from "domain/entities/address";
 
 export const BASE_URL =
   "https://southamerica-east1-mobile-testes.cloudfunctions.net";

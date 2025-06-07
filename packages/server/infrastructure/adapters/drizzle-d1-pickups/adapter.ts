@@ -1,6 +1,6 @@
-import { PickupEntity } from "@sp-insulina/core/entities/pickup";
-import { PickupRepository } from "@sp-insulina/core/interfaces/pickup-repository";
-import { drizzle } from "drizzle-orm/d1";
+import { PickupEntity } from "domain/entities/pickup";
+import { PickupRepository } from "domain/interfaces/pickup-repository";
+import { DrizzleD1Database } from "drizzle-orm/d1";
 import { eq, sql, and } from "drizzle-orm";
 import {
   addressesModel,
@@ -11,9 +11,9 @@ import {
 } from "./schema";
 import { transformPickupsQueryResults } from "./transform";
 
-export function pickupRepositoryWithD1(db: D1Database): PickupRepository {
-  const drizzleDb = drizzle(db);
-
+export function pickupRepositoryWithD1(
+  drizzleDb: DrizzleD1Database,
+): PickupRepository {
   return {
     async addPickups(pickups: PickupEntity[]): Promise<void> {
       for (const pickup of pickups) {

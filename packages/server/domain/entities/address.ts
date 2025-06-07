@@ -1,4 +1,4 @@
-import { calcDistance } from "@sp-insulina/core/utils/distance";
+import { calcDistance } from "utils/distance";
 
 export interface AddressEntity {
   address: string;

@@ -1,16 +1,21 @@
 {
   "name": "@sp-insulina/server",
+  "version": "1.0.0",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
+    "test:unit": "vitest",
+    "test": "npm run test:unit -- --run",
+    "cf:migration": "wrangler d1 migrations apply sp-insulinas",
+    "cf:typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
-    "@sp-insulina/core": "*",
     "drizzle-orm": "^0.44.2",
     "hono": "^4.7.11"
   },
   "devDependencies": {
+    "vitest": "*",
+    "typescript": "*",
     "@cloudflare/workers-types": "^4.20250605.0",
     "wrangler": "^4.4.0"
   }

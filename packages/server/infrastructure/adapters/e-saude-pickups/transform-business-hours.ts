@@ -1,7 +1,7 @@
 import type {
   BusinessHourEntity,
   DayOfWeek,
-} from "@sp-insulina/core/entities/businessHour";
+} from "domain/entities/business-hour";
 
 /**
  * Transform business hours from API format to structured format

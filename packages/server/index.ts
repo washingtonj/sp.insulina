@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 
-import { pickupRepositoryWithD1 } from "./repositories/d1-pickups/adapter";
-import { ESaudeService } from "./services/e-saude/service";
-import { updateAvailability } from "@sp-insulina/core/usecases/sync-availabilities";
-import { getAllPickups } from "@sp-insulina/core/usecases/get-all-pickups";
+import { pickupRepositoryWithD1 } from "infrastructure/adapters/drizzle-d1-pickups/adapter";
+import { ESaudeService } from "infrastructure/adapters/e-saude-pickups/service";
+import { updateAvailability } from "domain/usecases/sync-availabilities";
+import { getAllPickups } from "domain/usecases/get-all-pickups";
+import { drizzle } from "drizzle-orm/d1";
 
 type Bindings = {
   MY_DB: D1Database;
@@ -15,8 +16,9 @@ app.use(logger());
 
 app.get("/", async (c) => {
   try {
+    const db = drizzle(c.env.MY_DB);
     await updateAvailability({
-      pickupRepository: pickupRepositoryWithD1(c.env.MY_DB),
+      pickupRepository: pickupRepositoryWithD1(db),
       pickupService: ESaudeService(),
     });
     return c.text(`Sync completed.pickups updated.`);
@@ -27,8 +29,9 @@ app.get("/", async (c) => {
 });
 
 app.get("/pickups", async (c) => {
+  const db = drizzle(c.env.MY_DB);
   const pickups = await getAllPickups({
-    pickupRepository: pickupRepositoryWithD1(c.env.MY_DB),
+    pickupRepository: pickupRepositoryWithD1(db),
   });
 
   return c.json(pickups);

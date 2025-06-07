@@ -1,4 +1,4 @@
-import { PickupEntity } from "$core/entities/pickup";
+import { PickupEntity } from "domain/entities/pickup";
 
 export interface PickupRepository {
   addPickups(pickups: PickupEntity[]): Promise<void>;
