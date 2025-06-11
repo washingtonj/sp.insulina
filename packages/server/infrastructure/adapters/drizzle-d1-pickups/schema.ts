@@ -38,8 +38,6 @@ export const insulinsModel = sqliteTable("insulins", {
 export const availabilitiesModel = sqliteTable("availabilities", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   pickup_id: integer("pickup_id").notNull(),
-  insulin_id: integer("insulin_id").notNull(),
-  quantity: integer("quantity").notNull(),
-  availabilityLevel: integer("availabilityLevel").notNull(),
   checked_at: text("checked_at").notNull(),
+  data: text("data").notNull(),
 });

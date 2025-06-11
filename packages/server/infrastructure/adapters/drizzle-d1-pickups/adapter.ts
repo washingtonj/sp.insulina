@@ -1,7 +1,7 @@
 import { PickupEntity } from "domain/entities/pickup";
 import { PickupRepository } from "domain/interfaces/pickup-repository";
 import { DrizzleD1Database } from "drizzle-orm/d1";
-import { eq, sql, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   addressesModel,
   availabilitiesModel,
@@ -47,123 +47,101 @@ export function pickupRepositoryWithD1(
     },
 
     async updateAvailabilities(pickups: PickupEntity[]): Promise<void> {
-      const [insulinsCode, pickupsCode] = await drizzleDb.batch([
-        drizzleDb
-          .select({
-            id: insulinsModel.id,
-            code: insulinsModel.code,
-          })
-          .from(insulinsModel),
-        drizzleDb
-          .select({
-            id: pickupsModel.id,
-            uuid: pickupsModel.uuid,
-          })
-          .from(pickupsModel),
-      ]);
-
-      let availabilitiesToBeAdded = [];
+      const pickupsCode = await drizzleDb
+        .select({
+          id: pickupsModel.id,
+          uuid: pickupsModel.uuid,
+        })
+        .from(pickupsModel);
 
       const checkDate = new Date().toISOString();
-
-      for (const pickup of pickups) {
-        const pickupDatabseId = pickupsCode.find((p) => p.uuid === pickup.id);
-
-        for (const availability of pickup.availability) {
-          const insulin = insulinsCode.find(
-            (insulin) => insulin.code == availability.insulin.code,
+      const availabilitiesToBeAdded = pickups
+        .map((pickup) => {
+          const pickupDatabaseId = pickupsCode.find(
+            (p) => p.uuid === pickup.id,
           );
 
-          let insulinId = insulin?.id;
+          if (!pickupDatabaseId) return null;
 
-          if (!insulinId) {
-            const insulinCreatedId = await drizzleDb
-              .insert(insulinsModel)
-              .values({
-                code: availability.insulin.code,
-                name: availability.insulin.name,
-                simpleName: availability.insulin.simpleName,
-                type: availability.insulin.type,
-              })
-              .returning({ id: insulinsModel.id });
-
-            insulinId = insulinCreatedId[0].id;
-
-            insulinsCode.push({
-              id: insulinId,
-              code: availability.insulin.code,
-            });
-          }
-
-          availabilitiesToBeAdded.push({
-            pickup_id: pickupDatabseId!.id,
-            insulin_id: insulinId,
+          const availabilityData = pickup.availability.map((availability) => ({
+            insulinCode: availability.insulin.code,
             quantity: availability.quantity,
-            availabilityLevel: availability.level,
+            level: availability.level,
+          }));
+
+          return {
+            pickup_id: pickupDatabaseId.id,
             checked_at: checkDate,
-          });
-        }
-      }
+            data: JSON.stringify(availabilityData),
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null);
 
       const chunkSize = 20;
-      for (let i = 0; i < availabilitiesToBeAdded.length; i += chunkSize) {
-        const chunk = availabilitiesToBeAdded.slice(i, i + chunkSize);
+      const chunks = Array.from(
+        { length: Math.ceil(availabilitiesToBeAdded.length / chunkSize) },
+        (_, i) =>
+          availabilitiesToBeAdded.slice(i * chunkSize, (i + 1) * chunkSize),
+      );
+
+      for (const chunk of chunks) {
         await drizzleDb.insert(availabilitiesModel).values(chunk);
       }
     },
 
     async getAllPickups(): Promise<PickupEntity[]> {
-      const latestAvailabilities = drizzleDb
-        .select({
-          pickup_id: availabilitiesModel.pickup_id,
-          insulin_id: availabilitiesModel.insulin_id,
-          max_checked_at: sql`MAX(${availabilitiesModel.checked_at})`.as(
-            "max_checked_at",
-          ),
-        })
-        .from(availabilitiesModel)
-        .groupBy(availabilitiesModel.pickup_id, availabilitiesModel.insulin_id)
-        .as("latest_availabilities");
-
-      // 2. Main query with join on latest availabilities
-      const results = await drizzleDb
+      // 1. Get all pickups with addresses
+      const pickupsWithAddresses = await drizzleDb
         .select({
           pickup: pickupsModel,
           address: addressesModel,
-          businessHour: businessHoursModel,
-          availability: availabilitiesModel,
-          insulin: insulinsModel,
         })
         .from(pickupsModel)
         .innerJoin(
           addressesModel,
           eq(pickupsModel.address_id, addressesModel.id),
-        )
-        .leftJoin(
-          businessHoursModel,
-          eq(pickupsModel.id, businessHoursModel.pickup_id),
-        )
-        .leftJoin(
-          latestAvailabilities,
-          and(eq(latestAvailabilities.pickup_id, pickupsModel.id)),
-        )
-        .leftJoin(
-          availabilitiesModel,
-          and(
-            eq(availabilitiesModel.pickup_id, latestAvailabilities.pickup_id),
-            eq(availabilitiesModel.insulin_id, latestAvailabilities.insulin_id),
-            eq(
-              availabilitiesModel.checked_at,
-              latestAvailabilities.max_checked_at,
-            ),
-          ),
-        )
-        .leftJoin(
-          insulinsModel,
-          eq(availabilitiesModel.insulin_id, insulinsModel.id),
         );
 
-      return transformPickupsQueryResults(results);
+      // 2. Get all business hours and latest availabilities for those pickups in parallel
+      const [businessHours, availabilities] = await drizzleDb.batch([
+        drizzleDb.select().from(businessHoursModel),
+        drizzleDb.select().from(availabilitiesModel),
+      ]);
+
+      // 3. Get all insulins
+      const insulins = await drizzleDb.select().from(insulinsModel);
+
+      // Build insulin map
+      const insulinMap = new Map(insulins.map((i) => [i.code, i]));
+
+      // Group business hours by pickup_id
+      const businessHoursByPickup = new Map();
+      businessHours.forEach((bh) => {
+        if (!businessHoursByPickup.has(bh.pickup_id))
+          businessHoursByPickup.set(bh.pickup_id, []);
+        businessHoursByPickup.get(bh.pickup_id).push(bh);
+      });
+
+      // Find the latest availability per pickup
+      const latestAvailabilities = new Map();
+      availabilities.forEach((av) => {
+        if (
+          !latestAvailabilities.has(av.pickup_id) ||
+          latestAvailabilities.get(av.pickup_id).checked_at < av.checked_at
+        ) {
+          latestAvailabilities.set(av.pickup_id, av);
+        }
+      });
+
+      // Merge everything for the transformer
+      const results = pickupsWithAddresses.map(({ pickup, address }) => ({
+        pickup,
+        address,
+        businessHour: businessHoursByPickup.get(pickup.id) || [],
+        availability: latestAvailabilities.get(pickup.id) || null,
+      }));
+
+      return transformPickupsQueryResults(results, insulinMap);
     },
   };
 }

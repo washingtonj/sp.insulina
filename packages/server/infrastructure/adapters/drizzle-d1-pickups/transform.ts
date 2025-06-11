@@ -3,84 +3,64 @@ import { PickupEntity } from "domain/entities/pickup";
 /**
  * Transforms the raw joined rows from the getAllPickups query
  * into an array of PickupEntity instances.
+ *
+ * @param results - The joined query results
+ * @param insulinMap - Map of insulin code to insulin entity for enrichment
  */
-export function transformPickupsQueryResults(results: any[]): PickupEntity[] {
-  const pickupsMap = new Map<
-    string,
-    {
-      pickup: any;
-      address: any;
-      businessHours: any[];
-      availabilities: any[];
-    }
-  >();
-
-  for (const row of results) {
-    const { pickup, address, businessHour, availability, insulin } = row;
-    if (!pickupsMap.has(pickup.uuid)) {
-      pickupsMap.set(pickup.uuid, {
-        pickup,
-        address,
-        businessHours: [],
-        availabilities: [],
-      });
-    }
-    const entry = pickupsMap.get(pickup.uuid)!;
-
-    // Collect business hours
-    if (
-      businessHour &&
-      !entry.businessHours.some(
+export function transformPickupsQueryResults(
+  results: any[],
+  insulinMap: Map<string, { code: string; name: string; simpleName: string; type: string }>
+): PickupEntity[] {
+  return results.map(({ pickup, address, businessHour, availability }) => {
+    // Always treat businessHour as array for simplicity
+    const businessHoursArr = Array.isArray(businessHour)
+      ? businessHour
+      : businessHour
+      ? [businessHour]
+      : [];
+    const businessHours = businessHoursArr
+      .filter(
         (bh) =>
-          bh.day_of_week === businessHour.day_of_week &&
-          bh.open_time === businessHour.open_time &&
-          bh.close_time === businessHour.close_time,
+          bh &&
+          typeof bh.day_of_week === "number" &&
+          typeof bh.open_time === "string" &&
+          typeof bh.close_time === "string"
       )
-    ) {
-      entry.businessHours.push(businessHour);
+      .map((bh) => ({
+        dayOfWeek: bh.day_of_week,
+        hours: [bh.open_time, bh.close_time],
+      }));
+
+    // Parse and flatten availabilities
+    let flatAvailabilities: any[] = [];
+    if (availability && availability.data && availability.checked_at) {
+      try {
+        const parsed = JSON.parse(availability.data);
+        if (Array.isArray(parsed)) {
+          flatAvailabilities = parsed.map((item: any) => ({
+            ...item,
+            checked_at: availability.checked_at,
+          }));
+        }
+      } catch {
+        // skip invalid JSON
+      }
     }
 
-    // Collect availabilities
-    if (
-      availability &&
-      insulin &&
-      !entry.availabilities.some(
-        (a) =>
-          a.insulin_id === availability.insulin_id &&
-          a.pickup_id === availability.pickup_id,
-      )
-    ) {
-      entry.availabilities.push({
-        ...availability,
-        insulin,
-      });
-    }
-  }
-
-  return Array.from(pickupsMap.values()).map(
-    ({ pickup, address, businessHours, availabilities }) =>
-      ({
-        id: pickup.uuid,
-        name: pickup.name,
-        address: {
-          latitude: address.lat,
-          longitude: address.lng,
-          address: address.street,
-        },
-        businessHours: businessHours.map((bh) => ({
-          dayOfWeek: bh.day_of_week,
-          hours: [bh.open_time, bh.close_time],
-        })),
-        availability: availabilities.map((a) => ({
-          insulin: {
-            code: a.insulin.code,
-            name: a.insulin.name,
-            simpleName: a.insulin.simpleName,
-            type: a.insulin.type,
-          },
-          quantity: a.quantity,
-          level: a.availabilityLevel,
-        })),
-      }) as PickupEntity,
-  );
+    return {
+      id: pickup.uuid,
+      name: pickup.name,
+      address: {
+        latitude: address.lat,
+        longitude: address.lng,
+        address: address.street,
+      },
+      businessHours,
+      availability: flatAvailabilities.map((a) => ({
+        insulin: insulinMap.get(a.insulinCode),
+        quantity: a.quantity,
+        level: a.level,
+      })),
+    } as PickupEntity;
+  });
 }
