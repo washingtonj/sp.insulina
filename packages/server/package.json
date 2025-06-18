@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "wrangler dev",
-    "test:unit": "vitest",
-    "test": "npm run test:unit -- --run",
+    "test:unit": "vitest --coverage --run",
     "cf:migration": "wrangler d1 migrations apply sp-insulinas",
     "cf:deploy": "wrangler deploy --minify",
     "cf:typegen": "wrangler types --env-interface CloudflareBindings"
@@ -14,9 +13,11 @@
     "hono": "^4.7.11"
   },
   "devDependencies": {
-    "vitest": "*",
-    "typescript": "*",
     "@cloudflare/workers-types": "^4.20250605.0",
+    "@sp-insulina/server": "^1.0.0",
+    "typescript": "*",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "*",
     "wrangler": "^4.4.0"
   }
 }

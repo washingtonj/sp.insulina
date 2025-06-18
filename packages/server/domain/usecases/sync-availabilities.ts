@@ -1,19 +1,12 @@
-import { PickupEntity } from "domain/entities/pickup";
-import { PickupRepository } from "domain/interfaces/pickup-repository";
-import { PickupService } from "domain/interfaces/pickup-service";
+import { type PickupEntity, isSamePickup } from "domain/entities/pickup";
+import type { PickupRepository } from "domain/interfaces/pickup-repository";
+import type { PickupService } from "domain/interfaces/pickup-service";
+import { isOpenNow } from "domain/entities/business-hour";
 
 type Adapters = {
   pickupRepository: PickupRepository;
   pickupService: PickupService;
 };
-
-// Helper to compare pickups by name and address
-function isSamePickup(
-  a: { name: string; address: { address: string } },
-  b: { name: string; address: { address: string } },
-) {
-  return a.name === b.name && a.address.address === b.address.address;
-}
 
 export async function updateAvailability({
   pickupRepository,
@@ -49,5 +42,11 @@ export async function updateAvailability({
     })
     .filter((pickup) => pickup !== undefined);
 
-  await pickupRepository.updateAvailabilities(pickupsWithId);
+  // Only update pickups that are open now.
+  const now = new Date();
+  const pickupsOpenNow = pickupsWithId.filter((pickup) =>
+    isOpenNow(pickup.businessHours, now),
+  );
+
+  await pickupRepository.updateAvailabilities(pickupsOpenNow);
 }
