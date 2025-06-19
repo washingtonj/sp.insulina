@@ -4,13 +4,13 @@
 		nph: number;
 		regular: number;
 	}
-</script>
 
-<script lang="ts">
 	type Props = {
 		history: InsulinHistoryEntry[];
 	};
+</script>
 
+<script lang="ts">
 	let { history }: Props = $props();
 
 	// Chart dimensions and padding

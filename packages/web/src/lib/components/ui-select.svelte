@@ -6,7 +6,7 @@
 	type Props = {
 		items: { value: string; label: string; disabled?: boolean }[];
 		type: 'single' | 'multiple';
-		onSelect: (value: string | string[]) => void;
+		onSelect?: (value: string | string[]) => void;
 		selected?: string | string[];
 		placeholder?: string;
 	};
@@ -42,7 +42,7 @@
 
 	function handleValueChange(value: string | string[]) {
 		selected = value;
-		onSelect(value);
+		onSelect?.(value);
 	}
 
 	onMount(() => {

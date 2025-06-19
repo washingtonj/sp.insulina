@@ -3,19 +3,19 @@
 		type InsulinHistoryEntry
 	} from './app-pickup-card-input-chart.svelte';
 
-	export type PickupCardInputProps = {
+	export type AppPickupCardInputProps = {
 		type: 'pen' | 'vial' | 'refill';
 		nph: {
 			quantity: number;
 			level: 0 | 1 | 2;
 		};
-		regular: PickupCardInputProps['nph'];
+		regular: AppPickupCardInputProps['nph'];
 		history: InsulinHistoryEntry[];
 	};
 </script>
 
 <script lang="ts">
-	let { nph, regular, type, history }: PickupCardInputProps = $props();
+	let { nph, regular, type, history }: AppPickupCardInputProps = $props();
 	const typeLabels = { pen: 'Caneta', vial: 'Ampola', refill: 'Refill' };
 </script>
 

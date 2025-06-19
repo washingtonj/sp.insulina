@@ -1,117 +1,71 @@
 <script lang="ts">
-	import InsulinFilter from '$lib/components/app-insulin-filter.svelte';
-	import PickupCard from '$lib/components/app-pickup-card.svelte';
-	import SeoHead from '$lib/components/app-seo-head.svelte';
-	import { userState, setLocation } from '$lib/stores/user.svelte.js';
-	import { applyFilters } from '$lib/utils/filters.js';
-	import { applySorters } from '$lib/utils/sorters.js';
-
-	let { data } = $props();
-	let { pickups } = data;
-	let { location } = userState;
-
-	let searchQuery = $state('');
-	let isOrderByNearest = $state(false);
-	let is24hOnly = $state(false);
-	let isWeekendOnly = $state(false);
-	let requestedInsulins = $state<InsulinEntity[]>([]);
-
-	let availableInsulins = $derived(extractAvailableInsulins(pickups));
-
-	let pickupsWithLocation = $derived.by(() => {
-		if (!location.data) return pickups;
-
-		return pickups.map((pickup) =>
-			calcPickupDistance(pickup, {
-				lat: location.data!.latitude,
-				lng: location.data!.longitude
-			})
-		);
-	});
-
-	let pickupsFiltered = $derived.by(() => {
-		let filtered = applyFilters(pickupsWithLocation, {
-			searchQuery,
-			requestedInsulins,
-			is24hOnly,
-			isWeekendOnly
-		});
-
-		filtered = applySorters(filtered, requestedInsulins);
-		return filtered;
-	});
-
-	let totals = $derived({ data: pickups.length, filtered: pickupsFiltered.length });
+	import AppView from '$lib/views/app.svelte';
 </script>
 
-<SeoHead />
-<main class="relative m-auto flex max-w-full flex-col">
-	<div class="flex flex-col lg:flex-row">
-		<!-- Left sidebar - fixed position -->
-		<div class="flex flex-col gap-4 p-4 lg:sticky lg:top-0 lg:h-screen lg:max-w-xl">
-			<div class="flex flex-col">
-				<h1 class="flex flex-col items-start text-3xl font-bold">
-					<div class="flex items-center">
-						<span class="text-blue-600">sp.</span>
-						<span class="text-gray-800">insulina</span>
-					</div>
-					<div class="-mt-3 ml-8 w-32">
-						<svg
-							viewBox="0 0 100 15"
-							xmlns="http://www.w3.org/2000/svg"
-							class="fill-current text-blue-400"
-						>
-							<path d="M0,7.5 C15,0 35,15 50,7.5 C65,0 85,15 100,7.5" />
-						</svg>
-					</div>
-				</h1>
-			</div>
-
-			<!-- Filter Component -->
-			<InsulinFilter
-				bind:requestedInsulins
-				bind:searchQuery
-				bind:isOrderByNearest
-				bind:is24hOnly
-				bind:isWeekendOnly
-				{availableInsulins}
-				{totals}
-				{location}
-				onOrderByNearest={() => {
-					if (!location.data) setLocation();
-				}}
-			/>
-
-			<p class="rounded-lg bg-gray-100 p-4 text-sm text-gray-500">
-				Interface simplificada para visualização dos dados públicos do sistema <b>e-saude</b> da prefeitura
-				de São Paulo. Facilitamos a localização de insumos na capital com informações geográficas adicionais.
-			</p>
-			<p class="rounded-lg bg-gray-100 p-4 text-sm text-gray-500">
-				<a
-					aria-label="Link para o portal e-saude"
-					aria-labelledby="link-e-saude"
-					href="https://e-saudesp.prefeitura.sp.gov.br/#/remedio-na-hora"
-					target="_blank"
-					class="text-blue-600 hover:underline"
-				>
-					https://e-saudesp.prefeitura.sp.gov.br/#/remedio-na-hora
-				</a>
-			</p>
-		</div>
-
-		<!-- Right content - scrollable -->
-		<div class="flex-1 p-4">
-			{#if pickupsFiltered.length === 0}
-				<div class="py-8 text-center text-gray-500">
-					Nenhum local encontrado com os filtros selecionados.
-				</div>
-			{:else}
-				<ul class="mb-8 flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-4">
-					{#each pickupsFiltered as { address, availability, name, businessHours } (name)}
-						<PickupCard {businessHours} {name} {address} {availability} {requestedInsulins} />
-					{/each}
-				</ul>
-			{/if}
-		</div>
-	</div>
-</main>
+<AppView
+	dispatch={() => {}}
+	data={{
+		pickups: [
+			{
+				pickupName: 'UBS Vila Caiuba',
+				pickupAddress: 'Rua das Flores, 123, São Paulo - SP',
+				businessHours: ['Segunda a Sexta: 09:00 - 19:00', 'Sábado: 09:00 - 14:00'],
+				data: [
+					{
+						type: 'pen',
+						nph: { quantity: 74, level: 1 },
+						regular: { quantity: 1000, level: 0 },
+						history: [
+							{ date: '2024-06-01', nph: 80, regular: 100 },
+							{ date: '2024-06-02', nph: 60, regular: 120 },
+							{ date: '2024-06-03', nph: 90, regular: 80 },
+							{ date: '2024-06-04', nph: 50, regular: 130 },
+							{ date: '2024-06-05', nph: 100, regular: 70 },
+							{ date: '2024-06-06', nph: 65, regular: 110 },
+							{ date: '2024-06-07', nph: 85, regular: 95 }
+						]
+					},
+					{
+						type: 'vial',
+						nph: { quantity: 1200, level: 2 },
+						regular: { quantity: 39, level: 1 },
+						history: [
+							{ date: '2024-06-01', nph: 1200, regular: 39 },
+							{ date: '2024-06-02', nph: 1190, regular: 41 },
+							{ date: '2024-06-03', nph: 1180, regular: 2431 },
+							{ date: '2024-06-04', nph: 1170, regular: 45 },
+							{ date: '2024-06-05', nph: 1160, regular: 47 },
+							{ date: '2024-06-06', nph: 1150, regular: 49 },
+							{ date: '2024-06-07', nph: 1140, regular: 51 }
+						]
+					},
+					{
+						type: 'refill',
+						nph: { quantity: 0, level: 0 },
+						regular: { quantity: 933, level: 2 },
+						history: [
+							{ date: '2024-06-01', nph: 0, regular: 933 },
+							{ date: '2024-06-02', nph: 0, regular: 913 },
+							{ date: '2024-06-03', nph: 0, regular: 893 },
+							{ date: '2024-06-04', nph: 0, regular: 873 },
+							{ date: '2024-06-05', nph: 0, regular: 853 },
+							{ date: '2024-06-06', nph: 0, regular: 833 },
+							{ date: '2024-06-07', nph: 0, regular: 813 }
+						]
+					}
+				]
+			}
+		],
+		filter: {
+			searchQuery: '',
+			selectedInsulinTypes: [],
+			businessHours: undefined,
+			insulinTypes: [
+				{ value: 'insulina-rapida', label: 'Insulina rápida' },
+				{ value: 'insulina-lenta', label: 'Insulina lenta' },
+				{ value: 'insulina-mista', label: 'Insulina mista' }
+			]
+		},
+		isLoading: false
+	}}
+/>

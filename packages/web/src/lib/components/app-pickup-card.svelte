@@ -1,17 +1,17 @@
 <script lang="ts" module>
 	import UiBadge from './ui-badge.svelte';
-	import PickupCardInput, { type PickupCardInputProps } from './app-pickup-card-input.svelte';
+	import PickupCardInput, { type AppPickupCardInputProps } from './app-pickup-card-input.svelte';
 
-	export type PickupCardProps = {
+	export type AppPickupCardProps = {
 		pickupName: string;
 		pickupAddress: string;
 		businessHours: string[];
-		data: PickupCardInputProps[];
+		data: AppPickupCardInputProps[];
 	};
 </script>
 
 <script lang="ts">
-	let { pickupName, pickupAddress, businessHours, data }: PickupCardProps = $props();
+	let { pickupName, pickupAddress, businessHours, data }: AppPickupCardProps = $props();
 </script>
 
 <div class="rounded-2xl border border-gray-300 p-4">
