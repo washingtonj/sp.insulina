@@ -55,7 +55,7 @@
 <Select.Root {type} onValueChange={handleValueChange} {items}>
 	<Select.Trigger
 		bind:ref={triggerEl}
-		class="flex w-full items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors select-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+		class="flex w-full items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors select-none focus:border-black focus:ring-2 focus:ring-black focus:outline-none"
 		aria-label={placeholder}
 		onclick={updateDropdownWidth}
 	>
@@ -71,7 +71,7 @@
 			<Select.Viewport class="p-1" style={`min-width: ${dropdownWidth}; width: ${dropdownWidth};`}>
 				{#each items as item, i (i + item.value)}
 					<Select.Item
-						class="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors select-none hover:bg-blue-50 data-disabled:opacity-50"
+						class="flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-sm transition-colors select-none hover:bg-gray-100 data-disabled:opacity-50"
 						value={item.value}
 						label={item.label}
 						disabled={item.disabled}

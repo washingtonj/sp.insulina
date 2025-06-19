@@ -1,10 +1,8 @@
 <script lang="ts">
-	import InsulinFilter from '$lib/components/InsulinFilter.svelte';
-	import PickupCard from '$lib/components/PickupCard.svelte';
-	import SeoHead from '$lib/components/SeoHead.svelte';
+	import InsulinFilter from '$lib/components/app-insulin-filter.svelte';
+	import PickupCard from '$lib/components/app-pickup-card.svelte';
+	import SeoHead from '$lib/components/app-seo-head.svelte';
 	import { userState, setLocation } from '$lib/stores/user.svelte.js';
-	import type { InsulinEntity } from '@sp-insulina/core/entities/insulin';
-	import { calcPickupDistance, extractAvailableInsulins } from '@sp-insulina/core/entities/pickup';
 	import { applyFilters } from '$lib/utils/filters.js';
 	import { applySorters } from '$lib/utils/sorters.js';
 

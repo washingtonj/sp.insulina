@@ -1,14 +1,16 @@
-<script lang="ts">
+<script lang="ts" module>
 	import UiBadge from './ui-badge.svelte';
 	import PickupCardInput, { type PickupCardInputProps } from './app-pickup-card-input.svelte';
 
-	type PickupCardProps = {
+	export type PickupCardProps = {
 		pickupName: string;
 		pickupAddress: string;
 		businessHours: string[];
 		data: PickupCardInputProps[];
 	};
+</script>
 
+<script lang="ts">
 	let { pickupName, pickupAddress, businessHours, data }: PickupCardProps = $props();
 </script>
 
@@ -36,11 +38,3 @@
 		{/each}
 	</ul>
 </div>
-
-<style>
-	@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-	:global(html) {
-		font-family: 'Inter', Arial, sans-serif;
-	}
-</style>
