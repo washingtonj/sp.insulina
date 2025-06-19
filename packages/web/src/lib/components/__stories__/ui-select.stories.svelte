@@ -1,7 +1,7 @@
 <script module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { fn } from '@storybook/test';
-	import UiSelect from './UiSelect.svelte';
+	import UiSelect from '../ui-select.svelte';
 
 	const items = [
 		{ value: 'apple', label: 'Apple' },
