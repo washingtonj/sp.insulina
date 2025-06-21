@@ -177,7 +177,7 @@ export function pickupRepositoryWithD1(
 
         acc[pickupId][checkedAt] = data;
         return acc;
-      }, {} as any);
+      }, {} as any) satisfies getAvailabilitiesTypes["response"];
     },
   };
 }

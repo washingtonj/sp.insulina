@@ -5,18 +5,16 @@ export type getAvailabilitiesTypes = {
     startDate: Date;
     endDate: Date;
   };
-  response: {
-    pickupId: string;
-    availabilities: {
-      pickupId: string;
-      checkedAt: Date;
-      availability: Array<{
-        insulinId: string;
+  response: Record<
+    string,
+    {
+      ["checkedAt"]: {
+        insulinCode: string;
         quantity: number;
         level: 1 | 2 | 3;
-      }>;
-    };
-  }[];
+      }[];
+    }
+  >;
 };
 
 export interface PickupRepository {

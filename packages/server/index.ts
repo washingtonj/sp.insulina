@@ -2,17 +2,13 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 
-import {
-  type PickupEntity,
-  is24Hours,
-  isWeekendOpen,
-} from "domain/entities/pickup";
 import { ESaudeService } from "infrastructure/adapters/e-saude-pickups/service";
 import { pickupRepositoryWithD1 } from "infrastructure/adapters/drizzle-d1-pickups/adapter";
 import { updateAvailability } from "domain/usecases/sync-availabilities";
 import { getAllPickups } from "domain/usecases/get-all-pickups";
 import { drizzle } from "drizzle-orm/d1";
 import { getAllAvailabilities } from "domain/usecases/get-all-availabilities";
+import { fromPickupEntityToDTO } from "presentation/pickup-dto";
 
 type Bindings = {
   MY_DB: D1Database;
@@ -28,22 +24,13 @@ app.use(
   }),
 );
 
-interface GetResponse extends PickupEntity {
-  is24Hours: boolean;
-  isWeekendOpen: boolean;
-}
-
 app.get("/", async (c) => {
   const db = drizzle(c.env.MY_DB);
   const pickups = await getAllPickups({
     pickupRepository: pickupRepositoryWithD1(db),
   });
 
-  const pickupsWithFlags: GetResponse[] = pickups.map((pickup) => ({
-    ...pickup,
-    is24Hours: is24Hours(pickup),
-    isWeekendOpen: isWeekendOpen(pickup),
-  }));
+  const pickupsWithFlags = pickups.map(fromPickupEntityToDTO);
 
   return c.json(pickupsWithFlags);
 });
