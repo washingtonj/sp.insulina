@@ -12,6 +12,7 @@ import { pickupRepositoryWithD1 } from "infrastructure/adapters/drizzle-d1-picku
 import { updateAvailability } from "domain/usecases/sync-availabilities";
 import { getAllPickups } from "domain/usecases/get-all-pickups";
 import { drizzle } from "drizzle-orm/d1";
+import { getAllAvailabilities } from "domain/usecases/get-all-availabilities";
 
 type Bindings = {
   MY_DB: D1Database;
@@ -45,6 +46,15 @@ app.get("/", async (c) => {
   }));
 
   return c.json(pickupsWithFlags);
+});
+
+app.get("availabilities", async (c) => {
+  const db = drizzle(c.env.MY_DB);
+  const availabilities = await getAllAvailabilities({
+    pickupRepository: pickupRepositoryWithD1(db),
+  });
+
+  return c.json(availabilities);
 });
 
 export default {

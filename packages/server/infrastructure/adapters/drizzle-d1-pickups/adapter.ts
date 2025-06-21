@@ -1,7 +1,10 @@
-import { PickupEntity } from "domain/entities/pickup";
-import { PickupRepository } from "domain/interfaces/pickup-repository";
+import type { PickupEntity } from "domain/entities/pickup";
+import type {
+  PickupRepository,
+  getAvailabilitiesTypes,
+} from "domain/interfaces/pickup-repository";
 import { DrizzleD1Database } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import {
   addressesModel,
   availabilitiesModel,
@@ -142,6 +145,39 @@ export function pickupRepositoryWithD1(
       }));
 
       return transformPickupsQueryResults(results, insulinMap);
+    },
+
+    async getAvailabilities(args) {
+      const fromdb = await drizzleDb
+        .select({
+          pickup_uuid: pickupsModel.uuid,
+          data: availabilitiesModel.data,
+          checked_at: availabilitiesModel.checked_at,
+        })
+        .from(availabilitiesModel)
+        .innerJoin(
+          pickupsModel,
+          eq(availabilitiesModel.pickup_id, pickupsModel.id),
+        )
+        .where(
+          and(
+            gte(availabilitiesModel.checked_at, args.startDate.toISOString()),
+            lte(availabilitiesModel.checked_at, args.endDate.toISOString()),
+          ),
+        );
+
+      return fromdb.reduce((acc, item) => {
+        const pickupId = item.pickup_uuid;
+        const checkedAt = item.checked_at;
+        const data = JSON.parse(item.data);
+
+        if (!acc[pickupId]) {
+          acc[pickupId] = {};
+        }
+
+        acc[pickupId][checkedAt] = data;
+        return acc;
+      }, {} as any);
     },
   };
 }

@@ -1,0 +1,11 @@
+[
+  {
+    "label": "Inspect ",
+    "adapter": "JavaScript",
+    "type": "node",
+    "request": "attach",
+    "url": "http://localhost:9229", // Fill your URL here.
+    "program": "$ZED_FILE",
+    "webRoot": "${ZED_WORKTREE_ROOT}"
+  }
+]
