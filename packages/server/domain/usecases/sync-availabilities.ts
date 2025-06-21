@@ -1,7 +1,10 @@
-import { type PickupEntity, isSamePickup } from "domain/entities/pickup";
+import {
+  type PickupEntity,
+  isSamePickup,
+  isOpenNow,
+} from "domain/entities/pickup";
 import type { PickupRepository } from "domain/interfaces/pickup-repository";
 import type { PickupService } from "domain/interfaces/pickup-service";
-import { isOpenNow } from "domain/entities/business-hour";
 
 type Adapters = {
   pickupRepository: PickupRepository;
@@ -43,10 +46,6 @@ export async function updateAvailability({
     .filter((pickup) => pickup !== undefined);
 
   // Only update pickups that are open now.
-  const now = new Date();
-  const pickupsOpenNow = pickupsWithId.filter((pickup) =>
-    isOpenNow(pickup.businessHours, now),
-  );
-
+  const pickupsOpenNow = pickupsWithId.filter((pickup) => isOpenNow(pickup));
   await pickupRepository.updateAvailabilities(pickupsOpenNow);
 }
