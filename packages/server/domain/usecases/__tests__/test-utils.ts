@@ -1,6 +1,8 @@
-import { PickupEntity } from "domain/entities/pickup";
-import { BusinessHourEntity } from "domain/entities/business-hour";
-import { AvailabilityEntity } from "domain/entities/availability";
+import {
+  PickupEntity,
+  BusinessHourEntity,
+  AvailabilityEntity,
+} from "domain/entities";
 
 /**
  * Helper to create a PickupEntity for tests.
@@ -18,7 +20,7 @@ export function createPickup({
   availability?: AvailabilityEntity[];
   id?: string;
 }): PickupEntity {
-  return {
+  return new PickupEntity({
     id,
     name,
     address: {
@@ -28,7 +30,7 @@ export function createPickup({
     },
     businessHours,
     availability: availability || [],
-  };
+  });
 }
 
 /**
@@ -38,27 +40,25 @@ export function createBusinessHour(
   dayOfWeek: number,
   open: string,
   close: string,
-  isOpen = true,
 ): BusinessHourEntity {
-  return {
-    dayOfWeek: dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+  return new BusinessHourEntity({
+    dayOfWeek: dayOfWeek as BusinessHourEntity["dayOfWeek"],
     hours: [open, close],
-    isOpen,
-  };
+  });
 }
 
 /**
  * Helper to create an AvailabilityEntity for tests.
  */
 export function createAvailability(insulinCode: string): AvailabilityEntity {
-  return {
+  return new AvailabilityEntity({
     insulin: {
       name: insulinCode,
-      simpleName: insulinCode,
       code: insulinCode,
-      type: "AMPOLA",
+      availableIn: "AMPOLA",
+      variant: "NPH",
     },
     quantity: 1,
     level: 1,
-  };
+  });
 }

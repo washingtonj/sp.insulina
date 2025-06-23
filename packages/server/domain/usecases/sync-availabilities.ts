@@ -1,8 +1,4 @@
-import {
-  type PickupEntity,
-  isSamePickup,
-  isOpenNow,
-} from "domain/entities/pickup";
+import { PickupEntity } from "domain/entities";
 import type { PickupRepository } from "domain/interfaces/pickup-repository";
 import type { PickupService } from "domain/interfaces/pickup-service";
 
@@ -23,7 +19,7 @@ export async function updateAvailability({
   const newPickups = fromService.filter(
     (servicePickup) =>
       !fromRepository.some((repoPickup) =>
-        isSamePickup(repoPickup, servicePickup),
+        repoPickup.isSamePickup(servicePickup),
       ),
   );
 
@@ -34,18 +30,22 @@ export async function updateAvailability({
     );
   }
 
-  const pickupsWithId: PickupEntity[] = fromService
+  const pickupsWithId = fromService
     .map((servicePickup) => {
       const repoPickup = fromRepository.find((repoPickup) =>
-        isSamePickup(repoPickup, servicePickup),
+        repoPickup.isSamePickup(servicePickup),
       );
       if (repoPickup) {
-        return { ...servicePickup, id: repoPickup.id };
+        const { id: _ignored, ...servicePickupData } = servicePickup;
+        return new PickupEntity({
+          ...servicePickupData,
+          id: repoPickup.id,
+        });
       }
     })
     .filter((pickup) => pickup !== undefined);
 
   // Only update pickups that are open now.
-  const pickupsOpenNow = pickupsWithId.filter((pickup) => isOpenNow(pickup));
+  const pickupsOpenNow = pickupsWithId.filter((pickup) => pickup.isOpenNow());
   await pickupRepository.updateAvailabilities(pickupsOpenNow);
 }

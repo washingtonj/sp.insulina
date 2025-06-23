@@ -36,18 +36,14 @@ describe("updateAvailability", () => {
     const openNowPickup = createPickup({
       name: "OpenNow",
       address: "A",
-      businessHours: [
-        createBusinessHour(6, "08:00", "18:00", true), // Saturday open 8-18, isOpen: true
-      ],
+      businessHours: [createBusinessHour(6, "08:00", "18:00")],
       availability: [createAvailability("A1")],
     });
 
     const closedNowPickup = createPickup({
       name: "ClosedNow",
       address: "B",
-      businessHours: [
-        createBusinessHour(6, "18:01", "23:00", true), // Saturday open 18:01-23:00, isOpen: true
-      ],
+      businessHours: [createBusinessHour(6, "18:01", "23:00")],
       availability: [createAvailability("B1")],
     });
 
@@ -72,7 +68,7 @@ describe("updateAvailability", () => {
     const newPickup = createPickup({
       name: "BrandNew",
       address: "New Address",
-      businessHours: [createBusinessHour(6, "08:00", "18:00", true)],
+      businessHours: [createBusinessHour(6, "08:00", "18:00")],
       availability: [createAvailability("N1")],
     });
 
@@ -203,10 +199,13 @@ describe("updateAvailability", () => {
       availability: [createAvailability("G1")],
     });
 
-    const pickupFromRepo = {
-      ...pickupFromService,
+    const pickupFromRepo = createPickup({
       id: "id-match",
-    };
+      name: "Match",
+      address: "G",
+      businessHours: [createBusinessHour(6, "08:00", "18:00")],
+      availability: [createAvailability("G1")],
+    });
 
     pickupService.getPickupsAvailabilities.mockResolvedValue([
       pickupFromService,

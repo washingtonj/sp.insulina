@@ -1,20 +1,11 @@
-import { PickupEntity } from "domain/entities/pickup";
+import { AvailabilityEntity, PickupEntity } from "domain/entities";
 
 export type getAvailabilitiesTypes = {
   args: {
     startDate: Date;
     endDate: Date;
   };
-  response: Record<
-    string,
-    {
-      ["checkedAt"]: {
-        insulinCode: string;
-        quantity: number;
-        level: 1 | 2 | 3;
-      }[];
-    }
-  >;
+  response: Record<string, { ["checkedAt"]: AvailabilityEntity[] }>;
 };
 
 export interface PickupRepository {

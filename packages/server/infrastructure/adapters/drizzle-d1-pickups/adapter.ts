@@ -1,4 +1,4 @@
-import type { PickupEntity } from "domain/entities/pickup";
+import type { PickupEntity } from "domain/entities";
 import type {
   PickupRepository,
   getAvailabilitiesTypes,
