@@ -3,6 +3,9 @@
 
 PRAGMA foreign_keys=off;
 
+-- 0. Backup availabilities data
+CREATE TABLE availabilities_backup AS SELECT * FROM availabilities;
+
 -- 1. Create new pickups table with address and business_hours as JSON columns
 CREATE TABLE pickups_new (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,5 +63,12 @@ CREATE TABLE insulins (
   type TEXT NOT NULL, -- e.g., 'CANETA', 'AMPOLA', 'REFILL'
   variant TEXT NOT NULL -- e.g., 'NPH', 'REGULAR'
 );
+
+-- 7. Restore availabilities data
+INSERT INTO availabilities (id, pickup_id, checked_at, data)
+SELECT id, pickup_id, checked_at, data FROM availabilities_backup;
+
+-- 8. Drop the backup table
+DROP TABLE availabilities_backup;
 
 PRAGMA foreign_keys=on;
