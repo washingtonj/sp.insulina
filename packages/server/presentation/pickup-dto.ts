@@ -1,6 +1,8 @@
-import { PickupEntity, is24Hours, isWeekendOpen } from "domain/entities/pickup";
+import { PickupEntity } from "domain/entities";
+import { WithoutMethods } from "utils/ts-utils";
 
-export interface PickupDTO extends Omit<PickupEntity, "businessHours"> {
+export interface PickupDTO
+  extends WithoutMethods<Omit<PickupEntity, "businessHours">> {
   tags: string[];
   is24HoursOpen: boolean;
   isWeekendOpen: boolean;
@@ -13,7 +15,7 @@ export interface PickupDTO extends Omit<PickupEntity, "businessHours"> {
  * - "Sábado das 10:00 às 16:00" etc. for weekends or other groups.
  */
 function getBusinessHourTags(pickup: PickupEntity): string[] {
-  if (is24Hours(pickup)) return ["Aberto 24h"];
+  if (pickup.is24Hours()) return ["Aberto 24h"];
 
   const dayNames = [
     "Domingo",
@@ -99,7 +101,7 @@ export function fromPickupEntityToDTO(pickup: PickupEntity): PickupDTO {
     availability: pickup.availability,
     name: pickup.name,
     tags: getBusinessHourTags(pickup),
-    is24HoursOpen: is24Hours(pickup),
-    isWeekendOpen: isWeekendOpen(pickup),
+    is24HoursOpen: pickup.is24Hours(),
+    isWeekendOpen: pickup.isWeekendOpen(),
   };
 }

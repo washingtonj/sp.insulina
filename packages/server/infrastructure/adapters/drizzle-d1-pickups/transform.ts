@@ -1,35 +1,32 @@
-import { PickupEntity } from "domain/entities/pickup";
+import { PickupEntity } from "domain/entities";
 
 /**
- * Transforms the raw joined rows from the getAllPickups query
+ * Transforms the raw rows from the getAllPickups query
  * into an array of PickupEntity instances.
  *
- * @param results - The joined query results
- * @param insulinMap - Map of insulin code to insulin entity for enrichment
+ * @param results - The pickups query results (with merged address/businessHours JSON)
+ * @param insulinsMap - Map of insulin code to insulin entity for enrichment
  */
 export function transformPickupsQueryResults(
   results: any[],
-  insulinMap: Map<string, { code: string; name: string; simpleName: string; type: string }>
+  insulinsMap: Map<string, any>,
 ): PickupEntity[] {
-  return results.map(({ pickup, address, businessHour, availability }) => {
-    // Always treat businessHour as array for simplicity
-    const businessHoursArr = Array.isArray(businessHour)
-      ? businessHour
-      : businessHour
-      ? [businessHour]
-      : [];
-    const businessHours = businessHoursArr
-      .filter(
-        (bh) =>
-          bh &&
-          typeof bh.day_of_week === "number" &&
-          typeof bh.open_time === "string" &&
-          typeof bh.close_time === "string"
-      )
-      .map((bh) => ({
-        dayOfWeek: bh.day_of_week,
-        hours: [bh.open_time, bh.close_time],
-      }));
+  return results.map(({ pickup, availability }) => {
+    // Parse address and businessHours from JSON columns
+    let address = { address: "", latitude: 0, longitude: 0 };
+    let businessHours: any[] = [];
+    try {
+      address =
+        typeof pickup.address === "string"
+          ? JSON.parse(pickup.address)
+          : pickup.address;
+    } catch {}
+    try {
+      businessHours =
+        typeof pickup.business_hours === "string"
+          ? JSON.parse(pickup.business_hours)
+          : pickup.business_hours;
+    } catch {}
 
     // Parse and flatten availabilities
     let flatAvailabilities: any[] = [];
@@ -47,20 +44,16 @@ export function transformPickupsQueryResults(
       }
     }
 
-    return {
+    return new PickupEntity({
       id: pickup.uuid,
       name: pickup.name,
-      address: {
-        latitude: address.lat,
-        longitude: address.lng,
-        address: address.street,
-      },
+      address,
       businessHours,
       availability: flatAvailabilities.map((a) => ({
-        insulin: insulinMap.get(a.insulinCode),
+        insulin: insulinsMap.get(a.insulinCode) ?? { code: a.insulinCode },
         quantity: a.quantity,
         level: a.level,
       })),
-    } as PickupEntity;
+    });
   });
 }

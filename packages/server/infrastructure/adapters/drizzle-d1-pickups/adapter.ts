@@ -4,14 +4,8 @@ import type {
   getAvailabilitiesTypes,
 } from "domain/interfaces/pickup-repository";
 import { DrizzleD1Database } from "drizzle-orm/d1";
-import { eq, and, gte, lte } from "drizzle-orm";
-import {
-  addressesModel,
-  availabilitiesModel,
-  businessHoursModel,
-  pickupsModel,
-  insulinsModel,
-} from "./schema";
+import { and, gte, lte } from "drizzle-orm";
+import { pickupsModel, availabilitiesModel, insulinsModel } from "./schema";
 import { transformPickupsQueryResults } from "./transform";
 
 export function pickupRepositoryWithD1(
@@ -20,37 +14,26 @@ export function pickupRepositoryWithD1(
   return {
     async addPickups(pickups: PickupEntity[]): Promise<void> {
       for (const pickup of pickups) {
-        const addressId = await drizzleDb
-          .insert(addressesModel)
-          .values({
-            lat: pickup.address.latitude,
-            lng: pickup.address.longitude,
-            street: pickup.address.address,
-          })
-          .returning({ id: addressesModel.id });
-
-        const pickupId = await drizzleDb
-          .insert(pickupsModel)
-          .values({
-            address_id: addressId[0].id,
-            name: pickup.name,
-            uuid: crypto.randomUUID(),
-          })
-          .returning({ id: pickupsModel.id });
-
-        await drizzleDb.insert(businessHoursModel).values(
-          pickup.businessHours.map((businessHour) => ({
-            open_time: businessHour.hours[0],
-            close_time: businessHour.hours[1],
-            day_of_week: businessHour.dayOfWeek,
-            pickup_id: pickupId[0].id,
-          })),
-        );
+        await drizzleDb.insert(pickupsModel).values({
+          name: pickup.name,
+          uuid: pickup.id ?? crypto.randomUUID(),
+          address: JSON.stringify({
+            address: pickup.address.address,
+            latitude: pickup.address.latitude,
+            longitude: pickup.address.longitude,
+          }),
+          business_hours: JSON.stringify(
+            pickup.businessHours.map((bh) => ({
+              dayOfWeek: bh.dayOfWeek,
+              hours: bh.hours,
+            })),
+          ),
+        });
       }
     },
 
     async updateAvailabilities(pickups: PickupEntity[]): Promise<void> {
-      const pickupsCode = await drizzleDb
+      const pickupsRows = await drizzleDb
         .select({
           id: pickupsModel.id,
           uuid: pickupsModel.uuid,
@@ -60,7 +43,7 @@ export function pickupRepositoryWithD1(
       const checkDate = new Date().toISOString();
       const availabilitiesToBeAdded = pickups
         .map((pickup) => {
-          const pickupDatabaseId = pickupsCode.find(
+          const pickupDatabaseId = pickupsRows.find(
             (p) => p.uuid === pickup.id,
           );
 
@@ -93,37 +76,15 @@ export function pickupRepositoryWithD1(
     },
 
     async getAllPickups(): Promise<PickupEntity[]> {
-      // 1. Get all pickups with addresses
-      const pickupsWithAddresses = await drizzleDb
-        .select({
-          pickup: pickupsModel,
-          address: addressesModel,
-        })
-        .from(pickupsModel)
-        .innerJoin(
-          addressesModel,
-          eq(pickupsModel.address_id, addressesModel.id),
-        );
+      // Get all pickups
+      const pickupsRows = await drizzleDb.select().from(pickupsModel);
 
-      // 2. Get all business hours and latest availabilities for those pickups in parallel
-      const [businessHours, availabilities] = await drizzleDb.batch([
-        drizzleDb.select().from(businessHoursModel),
-        drizzleDb.select().from(availabilitiesModel),
-      ]);
+      // Get all availabilities
+      const availabilities = await drizzleDb.select().from(availabilitiesModel);
 
-      // 3. Get all insulins
-      const insulins = await drizzleDb.select().from(insulinsModel);
-
-      // Build insulin map
-      const insulinMap = new Map(insulins.map((i) => [i.code, i]));
-
-      // Group business hours by pickup_id
-      const businessHoursByPickup = new Map();
-      businessHours.forEach((bh) => {
-        if (!businessHoursByPickup.has(bh.pickup_id))
-          businessHoursByPickup.set(bh.pickup_id, []);
-        businessHoursByPickup.get(bh.pickup_id).push(bh);
-      });
+      // Get all insulins
+      const insulinsRows = await drizzleDb.select().from(insulinsModel);
+      const insulinsMap = new Map(insulinsRows.map((ins) => [ins.code, ins]));
 
       // Find the latest availability per pickup
       const latestAvailabilities = new Map();
@@ -137,28 +98,22 @@ export function pickupRepositoryWithD1(
       });
 
       // Merge everything for the transformer
-      const results = pickupsWithAddresses.map(({ pickup, address }) => ({
+      const results = pickupsRows.map((pickup) => ({
         pickup,
-        address,
-        businessHour: businessHoursByPickup.get(pickup.id) || [],
         availability: latestAvailabilities.get(pickup.id) || null,
       }));
 
-      return transformPickupsQueryResults(results, insulinMap);
+      return transformPickupsQueryResults(results, insulinsMap);
     },
 
     async getAvailabilities(args) {
       const fromdb = await drizzleDb
         .select({
-          pickup_uuid: pickupsModel.uuid,
+          pickup_id: availabilitiesModel.pickup_id,
           data: availabilitiesModel.data,
           checked_at: availabilitiesModel.checked_at,
         })
         .from(availabilitiesModel)
-        .innerJoin(
-          pickupsModel,
-          eq(availabilitiesModel.pickup_id, pickupsModel.id),
-        )
         .where(
           and(
             gte(availabilitiesModel.checked_at, args.startDate.toISOString()),
@@ -166,10 +121,16 @@ export function pickupRepositoryWithD1(
           ),
         );
 
+      // Map pickup_id to uuid
+      const pickupsRows = await drizzleDb.select().from(pickupsModel);
+      const idToUuid = new Map(pickupsRows.map((p) => [p.id, p.uuid]));
+
       return fromdb.reduce((acc, item) => {
-        const pickupId = item.pickup_uuid;
+        const pickupId = idToUuid.get(item.pickup_id);
         const checkedAt = item.checked_at;
         const data = JSON.parse(item.data);
+
+        if (!pickupId) return acc;
 
         if (!acc[pickupId]) {
           acc[pickupId] = {};

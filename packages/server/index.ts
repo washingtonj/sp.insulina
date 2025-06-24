@@ -53,9 +53,12 @@ export default {
   ) {
     async function syncPickups() {
       const db = drizzle(env.MY_DB);
+      const pickupService = new ESaudeService();
+      const pickupRepository = pickupRepositoryWithD1(db);
+      
       return updateAvailability({
-        pickupRepository: pickupRepositoryWithD1(db),
-        pickupService: ESaudeService(),
+        pickupRepository,
+        pickupService
       });
     }
 
