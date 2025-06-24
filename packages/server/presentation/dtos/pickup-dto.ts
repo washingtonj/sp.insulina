@@ -3,7 +3,7 @@ import { WithoutMethods } from "utils/ts-utils";
 
 export interface PickupDTO
   extends WithoutMethods<Omit<PickupEntity, "businessHours">> {
-  tags: string[];
+  businessHourTags: string[];
   is24HoursOpen: boolean;
   isWeekendOpen: boolean;
 }
@@ -100,7 +100,7 @@ export function fromPickupEntityToDTO(pickup: PickupEntity): PickupDTO {
     address: pickup.address,
     availability: pickup.availability,
     name: pickup.name,
-    tags: getBusinessHourTags(pickup),
+    businessHourTags: getBusinessHourTags(pickup),
     is24HoursOpen: pickup.is24Hours(),
     isWeekendOpen: pickup.isWeekendOpen(),
   };
