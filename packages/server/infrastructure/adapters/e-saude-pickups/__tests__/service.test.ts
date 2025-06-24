@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getAvailability } from "../service";
+import { ESaudeService } from "../service";
 import { STATIC_INSULINS } from "../consts";
 
 describe("ESaudeService", () => {
@@ -25,7 +25,8 @@ describe("ESaudeService", () => {
       json: async () => mockResponse,
     } as unknown as Response);
 
-    await getAvailability();
+    const service = new ESaudeService();
+    await service.getPickupsAvailabilities();
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [url, options] = fetchSpy.mock.calls[0];

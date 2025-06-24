@@ -1,7 +1,4 @@
-import type {
-  BusinessHourEntity,
-  DayOfWeek,
-} from "domain/entities/business-hour";
+import type { BusinessHourEntity, DayOfWeek } from "domain/entities";
 
 /**
  * Transform business hours from API format to structured format
@@ -15,7 +12,6 @@ export function transformBusinessHours(
     days.push({
       dayOfWeek: i as DayOfWeek,
       hours: ["00:00", "00:00"],
-      isOpen: false,
     });
   }
 
@@ -30,7 +26,7 @@ export function transformBusinessHours(
       const hours: [string, string] = [timeMatch[1], timeMatch[2]];
       // Set weekdays (1-5) to open
       for (let i = 1; i <= 5; i++) {
-        days[i] = { dayOfWeek: i as DayOfWeek, hours, isOpen: true };
+        days[i] = { dayOfWeek: i as DayOfWeek, hours };
       }
     }
   }
@@ -44,7 +40,6 @@ export function transformBusinessHours(
       days[6] = {
         dayOfWeek: 6,
         hours: [timeMatch[1], timeMatch[2]],
-        isOpen: true,
       };
     }
   }
@@ -58,7 +53,6 @@ export function transformBusinessHours(
       days[0] = {
         dayOfWeek: 0,
         hours: [timeMatch[1], timeMatch[2]],
-        isOpen: true,
       };
     }
   }
@@ -70,7 +64,7 @@ export function transformBusinessHours(
       const hours: [string, string] = [timeMatch[1], timeMatch[2]];
       // Set all days to open
       for (let i = 0; i < 7; i++) {
-        days[i] = { dayOfWeek: i as DayOfWeek, hours, isOpen: true };
+        days[i] = { dayOfWeek: i as DayOfWeek, hours };
       }
     }
   }

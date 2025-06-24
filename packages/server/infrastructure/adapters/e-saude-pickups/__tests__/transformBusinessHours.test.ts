@@ -1,9 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { transformBusinessHours } from "../transform-business-hours";
-import type { BusinessHourEntity } from "domain/entities/business-hour";
+import type { BusinessHourEntity } from "domain/entities";
 
 function getOpenDays(businessHours: BusinessHourEntity[]) {
-  return businessHours.filter((d) => d.isOpen).map((d) => d.dayOfWeek);
+  return businessHours
+    .filter((d) => d.hours[0] !== "00:00" || d.hours[1] !== "00:00")
+    .map((d) => d.dayOfWeek);
 }
 
 describe("transformBusinessHours", () => {
@@ -13,10 +15,9 @@ describe("transformBusinessHours", () => {
     expect(getOpenDays(result)).toEqual([1, 2, 3, 4, 5]);
     for (let i = 1; i <= 5; i++) {
       expect(result[i].hours).toEqual(["07:00", "19:00"]);
-      expect(result[i].isOpen).toBe(true);
     }
-    expect(result[0].isOpen).toBe(false);
-    expect(result[6].isOpen).toBe(false);
+    expect(result[0].hours).toEqual(["00:00", "00:00"]);
+    expect(result[6].hours).toEqual(["00:00", "00:00"]);
   });
 
   it("parses weekday + Saturday with full names", () => {
@@ -25,7 +26,6 @@ describe("transformBusinessHours", () => {
     const result = transformBusinessHours(input);
     expect(getOpenDays(result)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(result[6].hours).toEqual(["08:00", "12:00"]);
-    expect(result[6].isOpen).toBe(true);
   });
 
   it("parses all days 24h with full names", () => {
@@ -34,7 +34,6 @@ describe("transformBusinessHours", () => {
     expect(getOpenDays(result)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     for (let i = 0; i < 7; i++) {
       expect(result[i].hours).toEqual(["00:00", "23:59"]);
-      expect(result[i].isOpen).toBe(true);
     }
   });
 
@@ -44,7 +43,6 @@ describe("transformBusinessHours", () => {
     const result = transformBusinessHours(input);
     expect(getOpenDays(result)).toEqual([0, 1, 2, 3, 4, 5]);
     expect(result[0].hours).toEqual(["09:00", "13:00"]);
-    expect(result[0].isOpen).toBe(true);
   });
 
   it("parses single day with full name", () => {
@@ -52,7 +50,6 @@ describe("transformBusinessHours", () => {
     const result = transformBusinessHours(input);
     expect(getOpenDays(result)).toEqual([6]);
     expect(result[6].hours).toEqual(["08:00", "12:00"]);
-    expect(result[6].isOpen).toBe(true);
   });
 
   it("parses weekday and weekend with full names", () => {
@@ -62,7 +59,6 @@ describe("transformBusinessHours", () => {
     expect(getOpenDays(result)).toEqual([0, 1, 2, 3, 4, 5, 6]);
     for (let i = 0; i < 7; i++) {
       expect(result[i].hours).toEqual(["00:00", "23:59"]);
-      expect(result[i].isOpen).toBe(true);
     }
   });
 
@@ -70,7 +66,6 @@ describe("transformBusinessHours", () => {
     const result = transformBusinessHours("");
     expect(getOpenDays(result)).toEqual([]);
     for (let i = 0; i < 7; i++) {
-      expect(result[i].isOpen).toBe(false);
       expect(result[i].hours).toEqual(["00:00", "00:00"]);
     }
   });

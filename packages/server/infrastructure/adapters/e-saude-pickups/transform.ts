@@ -1,6 +1,9 @@
-import type { InsulinEntity } from "domain/entities/insulin";
-import type { AvailabilityEntity } from "domain/entities/availability";
-import type { PickupEntity } from "domain/entities/pickup";
+import {
+  InsulinEntity,
+  AvailabilityEntity,
+  PickupEntity,
+  AddressEntity,
+} from "domain/entities";
 import { STATIC_INSULINS } from "./consts";
 import { transformBusinessHours } from "./transform-business-hours";
 
@@ -13,13 +16,49 @@ const normalize = (str: string) =>
     .toLowerCase()
     .trim();
 
-const typeHeuristics: Record<string, (name: string) => boolean> = {
-  CANETA: (name) => name.includes("preenchido"),
-  AMPOLA: (name) => name.includes("fam10ml"),
-  REFILL: (name) => name.includes("carpule") || name.includes("tubete"),
-};
+function inferAvailableIn(name: string): "AMPOLA" | "CANETA" | "REFILL" {
+  const n = name.toUpperCase();
+  if (n.includes("CARPULE") || n.includes("TUBETE")) return "REFILL";
+  if (n.includes("CANETA")) return "CANETA";
+  return "AMPOLA";
+}
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+function inferVariant(name: string): "NPH" | "REGULAR" {
+  const n = name.toUpperCase();
+  if (n.includes("NPH")) return "NPH";
+  return "REGULAR";
+}
+
+function findMatchingInsulin(
+  normalizedMedicamento: string,
+): InsulinEntity | undefined {
+  return STATIC_INSULINS.map((insulin) => {
+    const availableIn = inferAvailableIn(insulin.name);
+    const variant = inferVariant(insulin.name);
+    const normalizedInsulinName = normalize(insulin.name);
+    const normalizedSimple = normalize(`${variant} ${availableIn}`);
+    if (
+      normalizedMedicamento.includes(normalizedInsulinName) ||
+      normalizedInsulinName.includes(normalizedMedicamento) ||
+      normalizedMedicamento.includes(normalizedSimple)
+    ) {
+      return new InsulinEntity({
+        code: insulin.code,
+        name: insulin.name,
+        availableIn,
+        variant,
+      });
+    }
+    return undefined;
+  }).find(Boolean);
+}
+
+function determineAvailabilityLevel(nivel: string): 1 | 2 | 3 {
+  if (nivel === "alto") return 3;
+  if (nivel === "baixo") return 1;
+  return 2;
+}
+
 function processAvailableInsulins(
   quantities: any[],
 ): Record<string, { quantity: number; level: 1 | 2 | 3 }> {
@@ -38,51 +77,21 @@ function processAvailableInsulins(
   }, {});
 }
 
-function findMatchingInsulin(
-  normalizedMedicamento: string,
-): InsulinEntity | undefined {
-  return STATIC_INSULINS.find((insulin) => {
-    const normalizedInsulinName = normalize(insulin.name);
-    const normalizedInsulinSimple = normalize(insulin.simpleName);
-    const typeHeuristic = typeHeuristics[insulin.type];
-
-    const typeMatch = typeHeuristic
-      ? typeHeuristic(normalizedMedicamento)
-      : false;
-    const simpleNameMatch = normalizedMedicamento.includes(
-      normalizedInsulinSimple,
-    );
-
-    return (
-      (normalizedInsulinName.includes(normalizedMedicamento) ||
-        normalizedMedicamento.includes(normalizedInsulinName) ||
-        typeMatch) &&
-      simpleNameMatch
-    );
-  });
-}
-
-function determineAvailabilityLevel(nivel: string): 1 | 2 | 3 {
-  if (nivel === "alto") return 3;
-  if (nivel === "baixo") return 1;
-  return 2; // Default medium level
-}
-
 function createAvailabilityEntities(
   foundInsulins: Record<string, { quantity: number; level: 1 | 2 | 3 }>,
 ): AvailabilityEntity[] {
   return STATIC_INSULINS.map((insulin) => {
     const found = foundInsulins[insulin.code];
-    return {
-      insulin: {
+    return new AvailabilityEntity({
+      insulin: new InsulinEntity({
         code: insulin.code,
         name: insulin.name,
-        simpleName: insulin.simpleName,
-        type: insulin.type,
-      },
+        availableIn: inferAvailableIn(insulin.name),
+        variant: inferVariant(insulin.name),
+      }),
       quantity: found ? found.quantity : 0,
-      level: found ? found.level : 1, // Default to lowest level if not found
-    };
+      level: found ? found.level : 1,
+    });
   });
 }
 
@@ -93,23 +102,21 @@ export function fromGetAvailability(response: any): PickupEntity[] {
     return [];
   }
 
-  const pickups = disponibilidade.map((unit) => {
+  return disponibilidade.map((unit) => {
     const foundInsulins = processAvailableInsulins(unit.quantidades || []);
     const availability = createAvailabilityEntities(foundInsulins);
 
     const businessHours = transformBusinessHours(unit.expediente || "");
 
-    return {
+    return new PickupEntity({
       name: unit.unidade,
-      address: {
+      address: new AddressEntity({
         address: unit.endereco,
         latitude: unit.coordenadas.lat,
         longitude: unit.coordenadas.lng,
-      },
+      }),
       availability,
       businessHours,
-    };
+    });
   });
-
-  return pickups;
 }
