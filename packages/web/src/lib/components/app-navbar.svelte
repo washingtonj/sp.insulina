@@ -15,6 +15,6 @@
 	</div>
 {/snippet}
 
-<div class="flex h-14 items-center border-b border-gray-300 px-4">
+<div class="flex h-14 w-fit items-center rounded-lg border border-gray-300 bg-white px-4 shadow-xl">
 	{@render logo()}
 </div>
