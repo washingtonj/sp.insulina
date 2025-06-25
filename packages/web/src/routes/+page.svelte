@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import AppNavbar from '$lib/components/app-navbar.svelte';
 	import AppMap from '$lib/components/app-map.svelte';
-	import UiPickupList from '$lib/components/ui-pickup-list.svelte';
+	import UiPickupCard from '$lib/components/app-pickup-card.svelte';
 	import UiInput from '$lib/components/ui-input.svelte';
 	import UiSelect from '$lib/components/ui-select.svelte';
 	import data from '$lib/assets/data.json';
@@ -83,15 +83,12 @@
 
 	$effect(() => {
 		if (focusedPickupId) {
-			console.log('Focused pickup ID:', focusedPickupId);
 			const pickup = pickups.find((p) => p.id === focusedPickupId);
 			if (pickup) {
 				// Scroll to the focused pickup in the list
 				const element = document.getElementById('pickup-' + pickup.id);
 				if (element) {
 					element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-					element.classList.add('ring-2', 'ring-black');
-					setTimeout(() => element.classList.remove('ring-2', 'ring-black'), 1200);
 				}
 			}
 		} else {
@@ -171,7 +168,24 @@
 						/>
 					</div>
 				</div>
-				<UiPickupList pickups={filteredPickups} on:pickupClick={(e) => focusMarker(e.detail)} />
+				<!-- // Pickup list -->
+				<div class="flex flex-col gap-4">
+					{#if pickups.length === 0}
+						<div class="py-8 text-center text-sm text-gray-400">Nenhum local encontrado.</div>
+					{:else}
+						{#each filteredPickups as pickup (pickup.id)}
+							<UiPickupCard
+								id={'pickup-' + pickup.id}
+								name={pickup.name}
+								address={pickup.address.address}
+								businessHourTags={pickup.businessHourTags}
+								availability={pickup.availability}
+								selected={pickup.id === focusedPickupId}
+								onClick={() => (focusedPickupId = pickup.id)}
+							/>
+						{/each}
+					{/if}
+				</div>
 			{/if}
 		</div>
 	</div>
