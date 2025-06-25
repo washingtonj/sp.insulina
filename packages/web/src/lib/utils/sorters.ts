@@ -1,6 +1,34 @@
-import type { AvailabilityEntity } from '@sp-insulina/core/entities/availability';
-import type { PickupEntity } from '@sp-insulina/core/entities/pickup';
-import type { InsulinEntity } from '@sp-insulina/core/entities/insulin';
+// Local types for PickupEntity, InsulinEntity, AvailabilityEntity
+export type InsulinEntity = {
+	code: string;
+	name: string;
+	simpleName: string;
+	type: string;
+	variant: string;
+	id: number;
+};
+
+export type AvailabilityEntity = {
+	insulin: InsulinEntity;
+	quantity: number;
+	level: number;
+};
+
+export type PickupEntity = {
+	id: string;
+	name: string;
+	address: {
+		address: string;
+		latitude: number;
+		longitude: number;
+		distance?: number;
+	};
+	businessHourTags?: string[];
+	businessHours?: any;
+	is24HoursOpen?: boolean;
+	isWeekendOpen?: boolean;
+	availability: AvailabilityEntity[];
+};
 
 /**
  * Sorts pickups by balancing distance (when available), insulin levels and quantities.

@@ -32,8 +32,8 @@ declare module '$env/static/private' {
 	export const ASDF_INSTALL_TYPE: string;
 	export const SHELL: string;
 	export const TERM: string;
-	export const TMPDIR: string;
 	export const HOMEBREW_REPOSITORY: string;
+	export const TMPDIR: string;
 	export const npm_config_global_prefix: string;
 	export const TERM_PROGRAM_VERSION: string;
 	export const WINDOWID: string;
@@ -44,8 +44,8 @@ declare module '$env/static/private' {
 	export const ASDF_INSTALL_PATH: string;
 	export const USER: string;
 	export const LS_COLORS: string;
-	export const COMMAND_MODE: string;
 	export const ASDF_INSTALL_VERSION: string;
+	export const COMMAND_MODE: string;
 	export const npm_config_globalconfig: string;
 	export const SSH_AUTH_SOCK: string;
 	export const __CF_USER_TEXT_ENCODING: string;
@@ -68,8 +68,8 @@ declare module '$env/static/private' {
 	export const npm_config_node_gyp: string;
 	export const npm_package_version: string;
 	export const XPC_SERVICE_NAME: string;
-	export const SHLVL: string;
 	export const HOME: string;
+	export const SHLVL: string;
 	export const HOMEBREW_PREFIX: string;
 	export const npm_config_cache: string;
 	export const LOGNAME: string;
@@ -78,8 +78,8 @@ declare module '$env/static/private' {
 	export const ALACRITTY_WINDOW_ID: string;
 	export const ZED_TERM: string;
 	export const npm_config_user_agent: string;
-	export const HOMEBREW_CELLAR: string;
 	export const INFOPATH: string;
+	export const HOMEBREW_CELLAR: string;
 	export const npm_node_execpath: string;
 	export const npm_config_prefix: string;
 	export const COLORTERM: string;
@@ -122,8 +122,8 @@ declare module '$env/dynamic/private' {
 		ASDF_INSTALL_TYPE: string;
 		SHELL: string;
 		TERM: string;
-		TMPDIR: string;
 		HOMEBREW_REPOSITORY: string;
+		TMPDIR: string;
 		npm_config_global_prefix: string;
 		TERM_PROGRAM_VERSION: string;
 		WINDOWID: string;
@@ -134,8 +134,8 @@ declare module '$env/dynamic/private' {
 		ASDF_INSTALL_PATH: string;
 		USER: string;
 		LS_COLORS: string;
-		COMMAND_MODE: string;
 		ASDF_INSTALL_VERSION: string;
+		COMMAND_MODE: string;
 		npm_config_globalconfig: string;
 		SSH_AUTH_SOCK: string;
 		__CF_USER_TEXT_ENCODING: string;
@@ -158,8 +158,8 @@ declare module '$env/dynamic/private' {
 		npm_config_node_gyp: string;
 		npm_package_version: string;
 		XPC_SERVICE_NAME: string;
-		SHLVL: string;
 		HOME: string;
+		SHLVL: string;
 		HOMEBREW_PREFIX: string;
 		npm_config_cache: string;
 		LOGNAME: string;
@@ -168,8 +168,8 @@ declare module '$env/dynamic/private' {
 		ALACRITTY_WINDOW_ID: string;
 		ZED_TERM: string;
 		npm_config_user_agent: string;
-		HOMEBREW_CELLAR: string;
 		INFOPATH: string;
+		HOMEBREW_CELLAR: string;
 		npm_node_execpath: string;
 		npm_config_prefix: string;
 		COLORTERM: string;

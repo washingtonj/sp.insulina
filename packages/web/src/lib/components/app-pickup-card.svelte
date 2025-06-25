@@ -1,5 +1,4 @@
 <script lang="ts">
-	import UiInsulinAvailability from './app-insulin-availability.svelte';
 	import UiBadge from './ui-badge.svelte';
 
 	type Props = {
@@ -19,6 +18,7 @@
 		}[];
 		selected?: boolean;
 		onClick?: () => void;
+		distance?: number;
 	};
 
 	let {
@@ -28,7 +28,8 @@
 		businessHourTags = [],
 		availability = [],
 		onClick = () => {},
-		selected = false
+		selected = false,
+		distance = undefined
 	}: Props = $props();
 
 	let grouped = $derived.by(() =>
@@ -56,6 +57,11 @@
 		<div>
 			<h3 class="text-xl font-bold">{name}</h3>
 			<p class="text-sm text-gray-400">{address}</p>
+			{#if distance != null}
+				<p class="mt-1 text-xs text-gray-500">
+					{distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`}
+				</p>
+			{/if}
 		</div>
 		<div class="flex gap-0.5">
 			{#each businessHourTags as tag}

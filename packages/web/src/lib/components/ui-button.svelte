@@ -13,13 +13,14 @@
 <button
 	onclick={onClick}
 	class={[
-		'rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none',
+		'focus:ring-black-500 cursor-pointer rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:outline-none',
 		{
-			primary: 'border-blue-500 bg-blue-500 text-white hover:bg-blue-600 focus:border-blue-700',
+			primary:
+				'border-black-500 bg-black-500 hover:bg-black-600 focus:border-black-700 bg-black text-white',
 			secondary:
-				'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 focus:border-blue-500',
+				'focus:border-black-500 border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200',
 			ghost:
-				'border-transparent bg-transparent text-gray-700 hover:bg-gray-100 focus:border-blue-500'
+				'focus:border-black-500 border-transparent bg-transparent text-gray-700 hover:bg-gray-100'
 		}[variant]
 	]}
 >

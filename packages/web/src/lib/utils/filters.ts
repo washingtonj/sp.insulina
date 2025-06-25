@@ -1,6 +1,42 @@
-import type { InsulinEntity } from '@sp-insulina/core/entities/insulin';
-import type { PickupEntity } from '@sp-insulina/core/entities/pickup';
-import { has24hService, hasWeekendService } from '@sp-insulina/core/entities/businessHour';
+// Local types for PickupEntity and InsulinEntity
+export type InsulinEntity = {
+	code: string;
+	name: string;
+	simpleName: string;
+	type: string;
+	variant: string;
+	id: number;
+};
+
+export type AvailabilityEntity = {
+	insulin: InsulinEntity;
+	quantity: number;
+	level: number;
+};
+
+export type PickupEntity = {
+	id: string;
+	name: string;
+	address: {
+		address: string;
+		latitude: number;
+		longitude: number;
+		distance?: number;
+	};
+	businessHourTags?: string[];
+	businessHours?: any;
+	is24HoursOpen?: boolean;
+	isWeekendOpen?: boolean;
+	availability: AvailabilityEntity[];
+};
+
+function has24hService(businessHours: any): boolean {
+	return Array.isArray(businessHours) ? businessHours.some((h) => h.is24Hours) : false;
+}
+
+function hasWeekendService(businessHours: any): boolean {
+	return Array.isArray(businessHours) ? businessHours.some((h) => h.isWeekend) : false;
+}
 
 export function filterByInsulinCodes(
 	data: PickupEntity[],
@@ -46,32 +82,68 @@ export function filterByWeekendService(
 	return data.filter((item) => hasWeekendService(item.businessHours));
 }
 
-export function applyFilters(
+import { haversineDistanceKm } from './distance';
+
+/**
+ * Applies all filters and calculates distance if user location is provided.
+ * Optionally sorts by distance.
+ */
+export function applyFiltersAndDistance(
 	data: PickupEntity[],
-	filters: {
+	options: {
 		requestedInsulins?: InsulinEntity[];
 		searchQuery?: string;
 		is24hOnly?: boolean;
 		isWeekendOnly?: boolean;
+		userLocation?: { latitude: number; longitude: number } | null;
+		sortByDistance?: boolean;
 	}
 ): PickupEntity[] {
 	let filtered = [...data];
 
-	if (filters.requestedInsulins && filters.requestedInsulins.length > 0) {
-		const insulinCodes = filters.requestedInsulins.map((insulin) => insulin.code);
+	if (options.requestedInsulins && options.requestedInsulins.length > 0) {
+		const insulinCodes = options.requestedInsulins.map((insulin) => insulin.code);
 		filtered = filterByInsulinCodes(filtered, insulinCodes);
 	}
 
-	if (filters.searchQuery) {
-		filtered = filterBySearchQuery(filtered, filters.searchQuery);
+	if (options.searchQuery) {
+		filtered = filterBySearchQuery(filtered, options.searchQuery);
 	}
 
-	if (filters.is24hOnly) {
-		filtered = filterBy24hService(filtered, filters.is24hOnly);
+	if (options.is24hOnly) {
+		filtered = filterBy24hService(filtered, options.is24hOnly);
 	}
 
-	if (filters.isWeekendOnly) {
-		filtered = filterByWeekendService(filtered, filters.isWeekendOnly);
+	if (options.isWeekendOnly) {
+		filtered = filterByWeekendService(filtered, options.isWeekendOnly);
+	}
+
+	// Calculate distance if user location is provided
+	if (options.userLocation) {
+		filtered = filtered.map((pickup) => ({
+			...pickup,
+			address: {
+				...pickup.address,
+				distance: haversineDistanceKm(
+					options.userLocation!.latitude,
+					options.userLocation!.longitude,
+					pickup.address.latitude,
+					pickup.address.longitude
+				)
+			}
+		}));
+	}
+
+	// Optionally sort by distance
+	if (options.sortByDistance && options.userLocation) {
+		filtered = filtered.sort((a, b) => {
+			const da = a.address.distance;
+			const db = b.address.distance;
+			if (da == null && db == null) return 0;
+			if (da == null) return 1;
+			if (db == null) return -1;
+			return da - db;
+		});
 	}
 
 	return filtered;
