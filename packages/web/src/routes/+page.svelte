@@ -90,12 +90,12 @@
 	onMount(async () => {
 		setLocation(); // Get user location on page open
 		try {
-			// const res = await fetch('https://sp-insulina-server.wwnjr.workers.dev');
-			// if (!res.ok) throw new Error('Erro ao buscar dados');
-			// pickups = await res.json();
-			// allInsulinTypes = extractInsulinTypes(pickups);
-			pickups = data;
+			const res = await fetch('https://sp-insulina-server.wwnjr.workers.dev');
+			if (!res.ok) throw new Error('Erro ao buscar dados');
+			pickups = await res.json();
 			allInsulinTypes = extractInsulinTypes(pickups);
+			// pickups = data;
+			// allInsulinTypes = extractInsulinTypes(pickups);
 		} catch (e) {
 			error = 'Erro ao buscar dados dos pontos de retirada';
 		} finally {

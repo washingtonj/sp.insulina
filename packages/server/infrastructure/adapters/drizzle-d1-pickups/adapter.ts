@@ -4,7 +4,7 @@ import type {
   getAvailabilitiesTypes,
 } from "domain/interfaces/pickup-repository";
 import { DrizzleD1Database } from "drizzle-orm/d1";
-import { and, gte, lte } from "drizzle-orm";
+import { and, gte, lte, sql, eq } from "drizzle-orm";
 import { pickupsModel, availabilitiesModel, insulinsModel } from "./schema";
 import { transformPickupsQueryResults } from "./transform";
 
@@ -16,7 +16,7 @@ export function pickupRepositoryWithD1(
       for (const pickup of pickups) {
         await drizzleDb.insert(pickupsModel).values({
           name: pickup.name,
-          uuid: pickup.id ?? crypto.randomUUID(),
+          uuid: crypto.randomUUID(),
           address: JSON.stringify({
             address: pickup.address.address,
             latitude: pickup.address.latitude,
@@ -76,31 +76,52 @@ export function pickupRepositoryWithD1(
     },
 
     async getAllPickups(): Promise<PickupEntity[]> {
-      // Get all pickups
-      const pickupsRows = await drizzleDb.select().from(pickupsModel);
+      const latestAvailabilitiesSubquery = drizzleDb
+        .select({
+          pickup_id: availabilitiesModel.pickup_id,
+          max_checked_at: sql`MAX(${availabilitiesModel.checked_at})`.as(
+            "max_checked_at",
+          ),
+        })
+        .from(availabilitiesModel)
+        .groupBy(availabilitiesModel.pickup_id)
+        .as("latest");
 
-      // Get all availabilities
-      const availabilities = await drizzleDb.select().from(availabilitiesModel);
+      const [pickupsRows, insulinsRows, latestAvailabilitiesRows] =
+        await drizzleDb.batch([
+          drizzleDb.select().from(pickupsModel),
+          drizzleDb.select().from(insulinsModel),
+          drizzleDb
+            .select({
+              availability: availabilitiesModel,
+            })
+            .from(availabilitiesModel)
+            .innerJoin(
+              latestAvailabilitiesSubquery,
+              and(
+                eq(
+                  availabilitiesModel.pickup_id,
+                  latestAvailabilitiesSubquery.pickup_id,
+                ),
+                eq(
+                  availabilitiesModel.checked_at,
+                  latestAvailabilitiesSubquery.max_checked_at,
+                ),
+              ),
+            ),
+        ]);
 
-      // Get all insulins
-      const insulinsRows = await drizzleDb.select().from(insulinsModel);
       const insulinsMap = new Map(insulinsRows.map((ins) => [ins.code, ins]));
+      const latestAvailabilitiesMap = new Map(
+        latestAvailabilitiesRows.map((row: any) => [
+          row.availability.pickup_id,
+          row.availability,
+        ]),
+      );
 
-      // Find the latest availability per pickup
-      const latestAvailabilities = new Map();
-      availabilities.forEach((av) => {
-        if (
-          !latestAvailabilities.has(av.pickup_id) ||
-          latestAvailabilities.get(av.pickup_id).checked_at < av.checked_at
-        ) {
-          latestAvailabilities.set(av.pickup_id, av);
-        }
-      });
-
-      // Merge everything for the transformer
       const results = pickupsRows.map((pickup) => ({
         pickup,
-        availability: latestAvailabilities.get(pickup.id) || null,
+        availability: latestAvailabilitiesMap.get(pickup.id) || null,
       }));
 
       return transformPickupsQueryResults(results, insulinsMap);

@@ -6,6 +6,7 @@
     "isEntry": true,
     "imports": [
       "_index.js",
+      "_equality.js",
       "_exports.js"
     ]
   },
@@ -15,7 +16,6 @@
     "src": "../../node_modules/@sveltejs/kit/src/runtime/server/index.js",
     "isEntry": true,
     "imports": [
-      "_events.js",
       "_internal.js",
       "_exports.js"
     ]
@@ -29,18 +29,15 @@
       "_internal.js"
     ]
   },
-  "_events.js": {
-    "file": "chunks/events.js",
-    "name": "events",
-    "imports": [
-      "_index.js"
-    ]
+  "_equality.js": {
+    "file": "chunks/equality.js",
+    "name": "equality"
   },
   "_exports.js": {
     "file": "chunks/exports.js",
     "name": "exports",
     "imports": [
-      "_index.js"
+      "_equality.js"
     ]
   },
   "_index.js": {
@@ -51,7 +48,7 @@
     "file": "chunks/internal.js",
     "name": "internal",
     "imports": [
-      "_events.js",
+      "_equality.js",
       "_index.js"
     ]
   },
@@ -61,14 +58,8 @@
     "src": "src/routes/+layout.svelte",
     "isEntry": true,
     "css": [
-      "_app/immutable/assets/_layout.SFEiqq13.css"
+      "_app/immutable/assets/_layout.CVy0nAf5.css"
     ]
-  },
-  "src/routes/+page.server.ts": {
-    "file": "entries/pages/_page.server.ts.js",
-    "name": "entries/pages/_page.server.ts",
-    "src": "src/routes/+page.server.ts",
-    "isEntry": true
   },
   "src/routes/+page.svelte": {
     "file": "entries/pages/_page.svelte.js",
@@ -76,11 +67,10 @@
     "src": "src/routes/+page.svelte",
     "isEntry": true,
     "imports": [
-      "_index.js",
-      "_events.js"
+      "_index.js"
     ],
     "css": [
-      "_app/immutable/assets/_page.CV-KWLNP.css"
+      "_app/immutable/assets/_page.D74vm_-X.css"
     ]
   }
 }

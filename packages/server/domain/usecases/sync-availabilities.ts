@@ -47,5 +47,9 @@ export async function updateAvailability({
 
   // Only update pickups that are open now.
   const pickupsOpenNow = pickupsWithId.filter((pickup) => pickup.isOpenNow());
+  console.log(
+    `Updating availabilities for ${pickupsOpenNow.length} pickups that are open now.`,
+  );
+
   await pickupRepository.updateAvailabilities(pickupsOpenNow);
 }

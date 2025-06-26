@@ -32,8 +32,9 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "e87e34c7a30240779c39bf4bb2905b48"
-    }
+      "id": "e87e34c7a30240779c39bf4bb2905b48",
+      "preview_id": "e87e34c7a30240779c39bf4bb2905b48",
+    },
   ],
   "triggers": {
     "crons": ["0 * * * *"],

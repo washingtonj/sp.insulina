@@ -1,29 +1,4 @@
 import { clsx as clsx$1 } from "clsx";
-var is_array = Array.isArray;
-var index_of = Array.prototype.indexOf;
-var array_from = Array.from;
-var define_property = Object.defineProperty;
-var get_descriptor = Object.getOwnPropertyDescriptor;
-var object_prototype = Object.prototype;
-var array_prototype = Array.prototype;
-var get_prototype_of = Object.getPrototypeOf;
-var is_extensible = Object.isExtensible;
-const noop = () => {
-};
-function run_all(arr) {
-  for (var i = 0; i < arr.length; i++) {
-    arr[i]();
-  }
-}
-function equals(value) {
-  return value === this.v;
-}
-function safe_not_equal(a, b) {
-  return a != a ? b == b : a !== b || a !== null && typeof a === "object" || typeof a === "function";
-}
-function safe_equals(value) {
-  return !safe_not_equal(value, this.v);
-}
 const HYDRATION_START = "[";
 const HYDRATION_END = "]";
 const HYDRATION_ERROR = {};
@@ -108,10 +83,6 @@ function clsx(value) {
     return value ?? "";
   }
 }
-function to_class(value, hash, directives) {
-  var classname = value == null ? "" : "" + value;
-  return classname === "" ? null : classname;
-}
 var current_component = null;
 function getContext(key) {
   const context_map = get_or_init_context_map();
@@ -127,9 +98,6 @@ function setContext(key, context) {
 }
 function hasContext(key) {
   return get_or_init_context_map().has(key);
-}
-function getAllContexts() {
-  return get_or_init_context_map();
 }
 function get_or_init_context_map(name) {
   if (current_component === null) {
@@ -265,26 +233,6 @@ function spread_attributes(attrs, css_hash, classes, styles, flags = 0) {
   }
   return attr_str;
 }
-function spread_props(props) {
-  const merged_props = {};
-  let key;
-  for (let i = 0; i < props.length; i++) {
-    const obj = props[i];
-    for (key in obj) {
-      const desc = Object.getOwnPropertyDescriptor(obj, key);
-      if (desc) {
-        Object.defineProperty(merged_props, key, desc);
-      } else {
-        merged_props[key] = obj[key];
-      }
-    }
-  }
-  return merged_props;
-}
-function attr_class(value, hash, directives) {
-  var result = to_class(value);
-  return result ? ` class="${escape_html(result, true)}"` : "";
-}
 function bind_props(props_parent, props_now) {
   for (const key in props_now) {
     const initial_value = props_parent[key];
@@ -294,72 +242,22 @@ function bind_props(props_parent, props_now) {
     }
   }
 }
-function ensure_array_like(array_like_or_iterator) {
-  if (array_like_or_iterator) {
-    return array_like_or_iterator.length !== void 0 ? array_like_or_iterator : Array.from(array_like_or_iterator);
-  }
-  return [];
-}
-function once(get_value) {
-  let value = (
-    /** @type {V} */
-    UNINITIALIZED
-  );
-  return () => {
-    if (value === UNINITIALIZED) {
-      value = get_value();
-    }
-    return value;
-  };
-}
-function derived(fn) {
-  const get_value = once(fn);
-  let updated_value;
-  return function(new_value) {
-    if (arguments.length === 0) {
-      return updated_value ?? get_value();
-    }
-    updated_value = new_value;
-    return updated_value;
-  };
-}
 export {
-  object_prototype as A,
-  array_prototype as B,
-  get_descriptor as C,
-  get_prototype_of as D,
-  is_array as E,
-  safe_equals as F,
-  equals as G,
   HYDRATION_ERROR as H,
-  is_extensible as I,
-  run_all as J,
-  index_of as K,
   UNINITIALIZED as U,
   HYDRATION_START as a,
   HYDRATION_END as b,
-  array_from as c,
-  define_property as d,
-  pop as e,
-  escape_html as f,
+  pop as c,
+  spread_attributes as d,
+  escape_html as e,
+  bind_props as f,
   getContext as g,
-  safe_not_equal as h,
+  head as h,
   is_passive_event as i,
   hasContext as j,
-  spread_attributes as k,
-  getAllContexts as l,
-  bind_props as m,
-  noop as n,
-  derived as o,
+  copy_payload as k,
+  assign_payload as l,
   push as p,
-  copy_payload as q,
   render as r,
-  setContext as s,
-  assign_payload as t,
-  spread_props as u,
-  ensure_array_like as v,
-  attr_class as w,
-  clsx as x,
-  attr as y,
-  head as z
+  setContext as s
 };
