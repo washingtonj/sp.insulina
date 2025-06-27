@@ -33,19 +33,20 @@ async function getOrSetCache<T>(
   fetcher: () => Promise<T>,
 ): Promise<T> {
   const cached = await kv.get(key, "json");
-  const lastSync = await kv.get("LAST_SYNC");
+  const cachedAt = await kv.get(`${key}:CACHED_AT`);
   const now = Date.now();
 
-  // Only return cached if LAST_SYNC exists and is less than 1 hour ago
-  if (cached && lastSync) {
-    const lastSyncTime = new Date(lastSync).getTime();
-    if (now - lastSyncTime < CACHE_TTL) {
+  // Only return cached if CACHED_AT exists and is less than 30 minutes ago
+  if (cached && cachedAt) {
+    const cachedTime = new Date(cachedAt).getTime();
+    if (now - cachedTime < 30 * 60 * 1000) {
       return cached as T;
     }
   }
 
   const fresh = await fetcher();
   await kv.put(key, JSON.stringify(fresh));
+  await kv.put(`${key}:CACHED_AT`, new Date().toISOString());
   return fresh;
 }
 
@@ -96,8 +97,6 @@ export default {
         pickupRepository,
         pickupService,
       });
-
-      await env.KV.put("LAST_SYNC", new Date().toISOString());
     }
 
     ctx.waitUntil(syncPickups());
