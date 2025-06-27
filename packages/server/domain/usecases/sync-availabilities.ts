@@ -24,10 +24,40 @@ export async function updateAvailability({
   );
 
   if (newPickups.length) {
-    await pickupRepository.addPickups(newPickups);
-    console.log(
-      `Added ${newPickups.length} new pickups from service to repository.`,
-    );
+    // Filter out new pickups that have the same name as an existing pickup in the repository.
+    const pickupsToAdd = newPickups.filter((newPickup) => {
+      const pickupWithSameName = fromRepository.find(
+        (repoPickup) => repoPickup.name === newPickup.name,
+      );
+
+      if (pickupWithSameName) {
+        console.log(
+          `The pickup "${newPickup.name}" have the same name as an existing pickup in the repository. Skipping it!`,
+          {
+            new: {
+              name: newPickup.name,
+              address: newPickup.address,
+              businessHours: newPickup.businessHours,
+            },
+            existing: {
+              name: pickupWithSameName.name,
+              address: pickupWithSameName.address,
+              businessHours: pickupWithSameName.businessHours,
+            },
+          },
+        );
+        return false;
+      }
+
+      return true;
+    });
+
+    if (pickupsToAdd.length) {
+      await pickupRepository.addPickups(pickupsToAdd);
+      console.log(
+        `Added ${pickupsToAdd.length} new pickups from service to repository.`,
+      );
+    }
   }
 
   const pickupsWithId = fromService
@@ -47,9 +77,6 @@ export async function updateAvailability({
 
   // Only update pickups that are open now.
   const pickupsOpenNow = pickupsWithId.filter((pickup) => pickup.isOpenNow());
-  console.log(
-    `Updating availabilities for ${pickupsOpenNow.length} pickups that are open now.`,
-  );
-
   await pickupRepository.updateAvailabilities(pickupsOpenNow);
+  console.log(`Updated availabilities for ${pickupsOpenNow.length} pickups.`);
 }

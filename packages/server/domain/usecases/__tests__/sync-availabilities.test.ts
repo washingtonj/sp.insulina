@@ -63,6 +63,33 @@ describe("updateAvailability", () => {
     ]);
   });
 
+  it("should not update when the pickup have the same name as an existing pickup in the repository", async () => {
+    const existingPickup = createPickup({
+      name: "Existing",
+      address: "A",
+      businessHours: [createBusinessHour(6, "08:00", "18:00")],
+      availability: [createAvailability("A1")],
+      id: "id-existing",
+    });
+
+    const newPickup = createPickup({
+      name: "Existing",
+      address: "B",
+      businessHours: [createBusinessHour(6, "08:00", "18:00")],
+      availability: [createAvailability("B1")],
+    });
+
+    pickupRepository.getAllPickups.mockResolvedValue([existingPickup]);
+    pickupService.getPickupsAvailabilities.mockResolvedValue([newPickup]);
+
+    const logSpy = vi.spyOn(console, "log");
+
+    await updateAvailability({ pickupRepository, pickupService });
+
+    expect(pickupRepository.addPickups).not.toHaveBeenCalled();
+    logSpy.mockRestore();
+  });
+
   it("should create new pickups in the repository when new pickups appear in the service list", async () => {
     // Simulate a new pickup from the service that does not exist in the repository
     const newPickup = createPickup({

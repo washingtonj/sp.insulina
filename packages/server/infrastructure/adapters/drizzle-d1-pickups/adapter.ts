@@ -13,8 +13,11 @@ export function pickupRepositoryWithD1(
 ): PickupRepository {
   return {
     async addPickups(pickups: PickupEntity[]): Promise<void> {
+      // TODO: Currently, pickups are added individually since the volume is low.
+      // In the future, consider batching inserts for improved performance if the number of pickups increases.
       for (const pickup of pickups) {
         await drizzleDb.insert(pickupsModel).values({
+          id: undefined, // D1 will auto-generate the ID
           name: pickup.name,
           uuid: crypto.randomUUID(),
           address: JSON.stringify({
