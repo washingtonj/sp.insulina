@@ -1,4 +1,5 @@
 import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
+import { uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Pickups table (merged address and businessHours as JSON)
 export const pickupsModel = sqliteTable("pickups", {
@@ -19,8 +20,23 @@ export const insulinsModel = sqliteTable("insulins", {
   variant: text("variant").notNull(), // e.g., 'NPH', 'REGULAR'
 });
 
-// Availabilities table (unchanged, already stores insulin availabilities as JSON)
-export const availabilitiesModel = sqliteTable("availabilities", {
+// Availabilities table (reflects unique constraint on pickup_id + checked_at)
+export const availabilitiesModel = sqliteTable(
+  "availabilities",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    pickup_id: integer("pickup_id").notNull(),
+    checked_at: text("checked_at").notNull(),
+    data: text("data").notNull(), // JSON: array of { insulinCode, quantity, level }
+  },
+  (table) => ({
+    uniqPickupCheckedAt: uniqueIndex(
+      "uniq_availabilities_pickup_id_checked_at",
+    ).on(table.pickup_id, table.checked_at),
+  }),
+);
+
+export const lastAvailabilitiesModel = sqliteTable("latest_availabilities", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   pickup_id: integer("pickup_id").notNull(),
   checked_at: text("checked_at").notNull(),

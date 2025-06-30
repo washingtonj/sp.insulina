@@ -25,13 +25,17 @@ app.use(
   }),
 );
 
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour in ms
+const CACHE_ENABLED = false;
 
 async function getOrSetCache<T>(
   kv: KVNamespace,
   key: string,
   fetcher: () => Promise<T>,
 ): Promise<T> {
+  if (!CACHE_ENABLED) {
+    return await fetcher();
+  }
+
   const cached = await kv.get(key, "json");
   const cachedAt = await kv.get(`${key}:CACHED_AT`);
   const now = Date.now();
