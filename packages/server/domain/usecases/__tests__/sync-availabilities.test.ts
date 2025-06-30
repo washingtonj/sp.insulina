@@ -194,6 +194,32 @@ describe("updateAvailability", () => {
     ]);
   });
 
+  it("should treat ['00:00','00:00'] as closed (Sunday case)", async () => {
+    // Set to Sunday, 09:00 São Paulo
+    const sunday = new Date(Date.UTC(2023, 3, 9, 12, 0, 0)); // 2023-04-09T12:00:00Z (Sunday, 09:00 in São Paulo)
+    vi.setSystemTime(sunday);
+
+    const closedSundayPickup = createPickup({
+      name: "ClosedSunday",
+      address: "Z",
+      businessHours: [
+        createBusinessHour(0, "00:00", "00:00"), // Sunday closed
+        createBusinessHour(6, "08:00", "18:00"), // Saturday open
+      ],
+      availability: [createAvailability("Z1")],
+      id: "id-closed-sunday",
+    });
+
+    pickupService.getPickupsAvailabilities.mockResolvedValue([
+      closedSundayPickup,
+    ]);
+    pickupRepository.getAllPickups.mockResolvedValue([closedSundayPickup]);
+
+    await updateAvailability({ pickupRepository, pickupService });
+
+    expect(pickupRepository.updateAvailabilities).toHaveBeenCalledWith([]);
+  });
+
   it("should not update weekend-only pickup if today is weekday", async () => {
     // Set to Monday, 09:00 São Paulo
     const monday = new Date(Date.UTC(2023, 3, 10, 12, 0, 0)); // 2023-04-10T12:00:00Z (Monday, 09:00 in São Paulo)

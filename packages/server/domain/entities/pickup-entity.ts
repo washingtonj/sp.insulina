@@ -64,6 +64,11 @@ export class PickupEntity {
 
     const [openTime, closeTime] = todayHours.hours;
 
+    // Treat ['00:00', '00:00'] as closed
+    if (openTime === "00:00" && closeTime === "00:00") {
+      return false;
+    }
+
     // Parse open and close times as São Paulo time
     const [openHour, openMinute] = openTime.split(":").map(Number);
     const [closeHour, closeMinute] = closeTime.split(":").map(Number);

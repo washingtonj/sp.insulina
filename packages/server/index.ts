@@ -25,7 +25,7 @@ app.use(
   }),
 );
 
-const CACHE_ENABLED = false;
+const CACHE_ENABLED = true;
 
 async function getOrSetCache<T>(
   kv: KVNamespace,
