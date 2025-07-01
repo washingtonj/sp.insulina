@@ -53,7 +53,7 @@ describe("fromGetAvailability", () => {
             quantidades: [
               {
                 medicamento:
-                  "INSULINA HUMANA REGULAR 100 UI/ML SUSPENSÃO INJETÁVEL CANETA SISTEMA PREENCHIDO 3 ML",
+                  "INSULINA HUMANA REGULAR 100 UI/ML - SUSPENSAO INJETAVEL EM SISTEMA DE APLICACAO PREENCHIDO 3 ML",
                 quantidade: "85",
                 nivelDisponibilidade: "alto",
               },

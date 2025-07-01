@@ -2,7 +2,6 @@ import {
   InsulinEntity,
   AvailabilityEntity,
   PickupEntity,
-  AddressEntity,
 } from "domain/entities";
 import { STATIC_INSULINS } from "./consts";
 import { transformBusinessHours } from "./transform-business-hours";
@@ -19,7 +18,7 @@ const normalize = (str: string) =>
 function inferAvailableIn(name: string): "AMPOLA" | "CANETA" | "REFILL" {
   const n = name.toUpperCase();
   if (n.includes("CARPULE") || n.includes("TUBETE")) return "REFILL";
-  if (n.includes("CANETA")) return "CANETA";
+  if (n.includes("PREENCHIDO")) return "CANETA";
   return "AMPOLA";
 }
 
@@ -98,23 +97,20 @@ function createAvailabilityEntities(
 export function fromGetAvailability(response: any): PickupEntity[] {
   const disponibilidade = response?.result?.disponibilidade;
 
-  if (!Array.isArray(disponibilidade)) {
-    return [];
-  }
+  if (!Array.isArray(disponibilidade)) return [];
 
   return disponibilidade.map((unit) => {
     const foundInsulins = processAvailableInsulins(unit.quantidades || []);
     const availability = createAvailabilityEntities(foundInsulins);
-
-    const businessHours = transformBusinessHours(unit.expediente || "");
+    const businessHours = transformBusinessHours(unit.expediente);
 
     return new PickupEntity({
       name: unit.unidade,
-      address: new AddressEntity({
+      address: {
         address: unit.endereco,
         latitude: unit.coordenadas.lat,
         longitude: unit.coordenadas.lng,
-      }),
+      },
       availability,
       businessHours,
     });
