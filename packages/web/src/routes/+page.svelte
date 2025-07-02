@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import AppNavbar from '$lib/components/app-navbar.svelte';
 	import AppMap from '$lib/components/app-map.svelte';
-	import UiPickupCard from '$lib/components/app-pickup-card.svelte';
+	import AppPickupList from '$lib/components/app-pickup-list.svelte';
+	import AppPickupCard from '$lib/components/app-pickup-card.svelte';
 	import AppFilters from '$lib/components/app-filters.svelte';
 	import AppFilterBtn from '$lib/components/app-filter-btn.svelte';
 	import data from '$lib/assets/data.json';
@@ -21,7 +22,7 @@
 	// Filter state
 	let search = $state('');
 	let insulinTypes = $state<string[]>([]);
-	let openStatus = $state<string | null>(null);
+	let openStatus = $state<string>();
 	let focusedPickupId = $state('');
 	let isFilterOpen = $state(false);
 
@@ -114,8 +115,9 @@
 		longitude: pickup.address.longitude
 	}))}
 />
+
 <div
-	class="pointer-events-none absolute top-0 left-0 z-10 flex h-screen w-screen flex-col justify-between gap-4 overflow-hidden p-2 lg:justify-normal lg:p-4 xl:p-6 [&>*]:pointer-events-auto"
+	class="pointer-events-none absolute top-0 left-0 z-10 flex h-dvh w-screen flex-col justify-between gap-4 overflow-hidden p-2 lg:justify-normal lg:p-4 xl:p-6 [&>*]:pointer-events-auto"
 >
 	<div class="flex items-center gap-2">
 		<AppNavbar />
@@ -134,36 +136,24 @@
 				onClickOutside={() => (isFilterOpen = false)}
 			/>
 		{/if}
-		<div
-			class="scrollbar-none h-full overflow-y-scroll rounded-2xl border border-gray-300 bg-white shadow-xl"
+
+		<AppPickupList
+			isEmpty={filteredPickups.length === 0}
+			isLoading={loading}
+			isError={error !== null}
 		>
-			<div class="p-4">
-				{#if loading}
-					<p class="text-sm text-gray-400">Carregando pontos de retirada...</p>
-				{:else if error}
-					<p class="text-sm text-red-500">{error}</p>
-				{:else}
-					<!-- // Pickup list -->
-					<div class="flex flex-col gap-4">
-						{#if filteredPickups.length === 0}
-							<div class="py-8 text-center text-sm text-gray-400">Nenhum local encontrado.</div>
-						{:else}
-							{#each filteredPickups as pickup (pickup.id)}
-								<UiPickupCard
-									id={'pickup-' + pickup.id}
-									name={pickup.name}
-									address={pickup.address.address}
-									businessHourTags={pickup.businessHourTags}
-									availability={pickup.availability}
-									selected={pickup.id === focusedPickupId}
-									onClick={() => (focusedPickupId = pickup.id)}
-									distance={pickup.address?.distance}
-								/>
-							{/each}
-						{/if}
-					</div>
-				{/if}
-			</div>
-		</div>
+			{#each filteredPickups as pickup (pickup.id)}
+				<AppPickupCard
+					id={'pickup-' + pickup.id}
+					name={pickup.name}
+					address={pickup.address.address}
+					businessHourTags={pickup.businessHourTags}
+					availability={pickup.availability}
+					selected={pickup.id === focusedPickupId}
+					onClick={() => (focusedPickupId = pickup.id)}
+					distance={pickup.address?.distance}
+				/>
+			{/each}
+		</AppPickupList>
 	</div>
 </div>

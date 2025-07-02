@@ -16,7 +16,7 @@
 		"test": "npm run test:unit -- --run",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build",
-		"deploy": "npm run build && wrangler deploy"
+		"cf:deploy": "npm run build && wrangler deploy"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",

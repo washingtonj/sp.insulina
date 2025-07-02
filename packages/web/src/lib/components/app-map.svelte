@@ -152,7 +152,7 @@
 <style>
 	/* Make map container take up 100% of the viewport */
 	#map {
-		height: 100vh;
+		height: 100dvh;
 		width: 100%;
 		position: relative;
 		z-index: 0;
