@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 
@@ -8,6 +8,8 @@ import { updateAvailability } from "domain/usecases/sync-availabilities";
 import { getAllPickups } from "domain/usecases/get-all-pickups";
 import { drizzle } from "drizzle-orm/d1";
 import { getAllAvailabilities } from "domain/usecases/get-all-availabilities";
+import { getAvailabilitySeries } from "domain/usecases/get-availability-series";
+import { getBestDayProfile } from "domain/usecases/get-best-day-profile";
 import { fromPickupEntityToDTO } from "presentation/dtos/pickup-dto";
 
 type Bindings = {
@@ -26,6 +28,23 @@ app.use(
 );
 
 const CACHE_ENABLED = true;
+const CACHE_ENTRY_TTL_SECONDS = 60 * 60;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const DEFAULT_SERIES_DAYS = 30;
+const MAX_SERIES_DAYS = 90;
+
+function parseDays(value: string | undefined): number | null {
+  if (value === undefined) return DEFAULT_SERIES_DAYS;
+
+  const days = Number(value);
+  if (!Number.isInteger(days) || days < 1 || days > MAX_SERIES_DAYS) {
+    return null;
+  }
+
+  return days;
+}
 
 async function getOrSetCache<T>(
   kv: KVNamespace,
@@ -49,9 +68,28 @@ async function getOrSetCache<T>(
   }
 
   const fresh = await fetcher();
-  await kv.put(key, JSON.stringify(fresh));
-  await kv.put(`${key}:CACHED_AT`, new Date().toISOString());
+  await kv.put(key, JSON.stringify(fresh), {
+    expirationTtl: CACHE_ENTRY_TTL_SECONDS,
+  });
+  await kv.put(`${key}:CACHED_AT`, new Date().toISOString(), {
+    expirationTtl: CACHE_ENTRY_TTL_SECONDS,
+  });
   return fresh;
+}
+
+function daysOrError(
+  c: Context,
+): { days: number } | { error: Response } {
+  const days = parseDays(c.req.query("days"));
+
+  return days === null
+    ? {
+        error: c.json(
+          { error: `days deve ser um inteiro entre 1 e ${MAX_SERIES_DAYS}` },
+          400,
+        ),
+      }
+    : { days };
 }
 
 app.get("/", async (c) => {
@@ -83,6 +121,68 @@ app.get("availabilities", async (c) => {
   );
 
   return c.json(availabilities);
+});
+
+app.get("availabilities/series", async (c) => {
+  const resolved = daysOrError(c);
+  if ("error" in resolved) return resolved.error;
+
+  const db = drizzle(c.env.DATABASE);
+
+  const series = await getOrSetCache(
+    c.env.KV,
+    `SERIES_CACHE:${resolved.days}`,
+    () =>
+      getAvailabilitySeries(
+        { pickupRepository: pickupRepositoryWithD1(db) },
+        { days: resolved.days },
+      ),
+  );
+
+  return c.json(series);
+});
+
+app.get("pickups/best-days", async (c) => {
+  const resolved = daysOrError(c);
+  if ("error" in resolved) return resolved.error;
+
+  const db = drizzle(c.env.DATABASE);
+
+  const profile = await getOrSetCache(
+    c.env.KV,
+    `BEST_DAY_CACHE:${resolved.days}`,
+    () =>
+      getBestDayProfile(
+        { pickupRepository: pickupRepositoryWithD1(db) },
+        { days: resolved.days },
+      ),
+  );
+
+  return c.json(profile);
+});
+
+app.get("pickups/:id/availabilities", async (c) => {
+  const resolved = daysOrError(c);
+  if ("error" in resolved) return resolved.error;
+
+  const pickupId = c.req.param("id");
+  if (!UUID_PATTERN.test(pickupId)) {
+    return c.json({ error: "pickup inválido" }, 404);
+  }
+
+  const db = drizzle(c.env.DATABASE);
+
+  const series = await getOrSetCache(
+    c.env.KV,
+    `PICKUP_SERIES_CACHE:${pickupId}:${resolved.days}`,
+    () =>
+      getAvailabilitySeries(
+        { pickupRepository: pickupRepositoryWithD1(db) },
+        { days: resolved.days, pickupId },
+      ),
+  );
+
+  return c.json(series);
 });
 
 export default {

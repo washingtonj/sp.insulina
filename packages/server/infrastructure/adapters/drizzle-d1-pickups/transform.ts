@@ -49,6 +49,7 @@ export function transformPickupsQueryResults(
       name: pickup.name,
       address,
       businessHours,
+      checkedAt: availability?.checked_at,
       availability: flatAvailabilities.map((a) => ({
         insulin: insulinsMap.get(a.insulinCode) ?? { code: a.insulinCode },
         quantity: a.quantity,
