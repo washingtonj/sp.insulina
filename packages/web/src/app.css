@@ -1,9 +1,285 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
 @import 'tailwindcss';
+@import '@fontsource/nunito/400.css';
+@import '@fontsource/nunito/500.css';
+@import '@fontsource/nunito/600.css';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
 
+@theme {
+	--radius-card: 1.5rem;
+	--radius-sheet: 1.75rem;
+	--radius-pill: 9999px;
+
+	--shadow-float: 0 16px 40px -20px rgb(0 0 0 / 0.85);
+
+	--font-sans:
+		'Nunito', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+		'Helvetica Neue', Arial, sans-serif;
+
+	/* Apple HIG / Dynamic Type scale */
+	--text-large-title: 2.125rem;
+	--text-large-title--line-height: 2.5625rem;
+	--text-title-1: 1.75rem;
+	--text-title-1--line-height: 2.125rem;
+	--text-title-2: 1.375rem;
+	--text-title-2--line-height: 1.75rem;
+	--text-title-3: 1.25rem;
+	--text-title-3--line-height: 1.5625rem;
+	--text-headline: 1.0625rem;
+	--text-headline--line-height: 1.375rem;
+	--text-body: 1.0625rem;
+	--text-body--line-height: 1.375rem;
+	--text-callout: 1rem;
+	--text-callout--line-height: 1.3125rem;
+	--text-subhead: 0.9375rem;
+	--text-subhead--line-height: 1.25rem;
+	--text-footnote: 0.8125rem;
+	--text-footnote--line-height: 1.125rem;
+	--text-caption: 0.75rem;
+	--text-caption--line-height: 1rem;
+}
+
+/* Desktop denso (compacto estilo shadcn New York / Linear / Vercel):
+   segue a fileira "Small" do próprio HIG — mesmo sistema, um passo abaixo.
+   Só tipografia encolhe; alvos de toque continuam 44px. */
+@media (min-width: 768px) {
+	:root {
+		--text-large-title: 2rem;
+		--text-large-title--line-height: 2.4375rem;
+		--text-title-1: 1.625rem;
+		--text-title-1--line-height: 2rem;
+		--text-title-2: 1.25rem;
+		--text-title-2--line-height: 1.5625rem;
+		--text-title-3: 1.125rem;
+		--text-title-3--line-height: 1.4375rem;
+		--text-headline: 0.9375rem;
+		--text-headline--line-height: 1.25rem;
+		--text-body: 0.9375rem;
+		--text-body--line-height: 1.25rem;
+		--text-callout: 0.875rem;
+		--text-callout--line-height: 1.1875rem;
+		--text-subhead: 0.8125rem;
+		--text-subhead--line-height: 1.125rem;
+		--text-footnote: 0.75rem;
+		--text-footnote--line-height: 1rem;
+		--text-caption: 0.6875rem;
+		--text-caption--line-height: 0.8125rem;
+	}
+}
+
+/* Tokens semânticos: os utilitários leem as variáveis, então o tema troca em runtime */
+@theme inline {
+	--color-canvas: var(--canvas);
+	--color-surface: var(--surface);
+	--color-raised: var(--raised);
+	--color-line: var(--line);
+	--color-ink: var(--ink);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+}
+
 :root {
-	font-size: 15px;
-	font-family: 'Outfit', Arial, sans-serif;
+	--canvas: #0a0a0a;
+	--surface: #141414;
+	--raised: #1d1d1d;
+	--line: #2c2c2c;
+	--ink: #f4f4f5;
+	--muted: #a1a1aa;
+	--faint: #71717a;
+
+	--series-1: #f4f4f5;
+	--series-2: #a1a1aa;
+	--series-3: #71717a;
+
+	--map-filter: grayscale(1) invert(1) brightness(0.78) contrast(0.85);
+	--map-bg: #111111;
+
+	color-scheme: dark;
+	font-size: 16px;
+	font-family: var(--font-sans);
+	color: var(--color-ink);
+	background: var(--color-canvas);
+	-webkit-font-smoothing: antialiased;
+	font-optical-sizing: auto;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-tap-highlight-color: transparent;
+	overscroll-behavior-y: none;
+}
+
+[data-theme='light'] {
+	--canvas: #f2f2f7;
+	--surface: #ffffff;
+	--raised: #f2f2f7;
+	--line: #e3e3e8;
+	--ink: #1d1d1f;
+	--muted: #6e6e73;
+	--faint: #a1a1a6;
+
+	--series-1: #1d1d1f;
+	--series-2: #6e6e73;
+	--series-3: #a1a1a6;
+
+	--map-filter: grayscale(1) brightness(1.04) contrast(0.94);
+	--map-bg: #ffffff;
+
+	color-scheme: light;
+}
+
+@layer base {
+	h1,
+	h2,
+	h3,
+	h4 {
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		text-wrap: balance;
+	}
+
+	p {
+		text-wrap: pretty;
+	}
+
+	button:not(:disabled),
+	[role='button']:not([aria-disabled='true']),
+	summary,
+	label[for] {
+		cursor: pointer;
+	}
+
+	button:disabled {
+		cursor: not-allowed;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-ink);
+		outline-offset: 2px;
+	}
+
+	button,
+	a,
+	label {
+		touch-action: manipulation;
+	}
+
+	input {
+		font-size: 1rem;
+	}
+
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-line) transparent;
+	}
+}
+
+@layer utilities {
+	.tabular {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.animate-rise-in {
+		animation: rise-in 200ms cubic-bezier(0.2, 0, 0, 1) both;
+	}
+
+	.animate-pop-in {
+		animation: pop-in 160ms cubic-bezier(0.2, 0, 0, 1) both;
+	}
+
+	.animate-sheet-up {
+		animation: sheet-up 220ms cubic-bezier(0.2, 0, 0, 1) both;
+	}
+
+	.press {
+		transition: transform 120ms ease-out;
+	}
+
+	.press:active {
+		transform: scale(0.97);
+	}
+
+	.skeleton {
+		background-color: color-mix(in srgb, var(--color-ink) 8%, transparent);
+		background-image: linear-gradient(
+			90deg,
+			transparent 0%,
+			color-mix(in srgb, var(--color-ink) 7%, transparent) 50%,
+			transparent 100%
+		);
+		background-size: 200% 100%;
+		animation: skeleton-sweep 1.8s ease-in-out infinite;
+	}
+}
+
+@keyframes rise-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
+
+@keyframes pop-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px) scale(0.98);
+	}
+}
+
+@keyframes sheet-up {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+}
+
+@keyframes skeleton-sweep {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: -200% 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.skeleton {
+		animation: none;
+		background-image: none;
+	}
+
+	.animate-rise-in,
+	.animate-pop-in,
+	.animate-sheet-up {
+		animation: none;
+	}
+
+	.press:active {
+		transform: none;
+	}
+
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation: none;
+	}
+}
+
+/* Transição de tela (View Transitions API) — curva de saída da Apple */
+@media (prefers-reduced-motion: no-preference) {
+	::view-transition-old(root),
+	::view-transition-new(root) {
+		animation-duration: 240ms;
+		animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+	}
+}
+
+/* LayerChart acompanha o tema */
+.lc-axis-tick-label,
+.lc-axis-tick-label tspan {
+	fill: var(--color-muted);
+}
+
+.lc-grid-y-line,
+.lc-rule-y-line {
+	stroke: color-mix(in srgb, var(--color-ink) 15%, transparent);
 }

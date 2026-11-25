@@ -1,160 +1,202 @@
 <script lang="ts">
+	import 'leaflet/dist/leaflet.css';
 	import type * as Leaflet from 'leaflet';
-	import { onMount } from 'svelte';
+	import { totalUnits, type Place } from '$lib/places';
+	import { STOCK_LEVEL_COLOR, stockLevel, type StockSelection } from '$lib/stock-level';
 
 	type Props = {
-		focusedPickupId?: string;
-		sidebarWidth?: number;
-		pickups: {
-			id: string;
-			name: string;
-			latitude: number;
-			longitude: number;
-			address: string;
-		}[];
+		places: Place[];
+		selectedId?: string | null;
+		theme?: 'dark' | 'light';
+		selection?: StockSelection;
+		paddingLeft?: number;
+		onselect?: (id: string) => void;
 	};
 
-	let { pickups, focusedPickupId = $bindable(), sidebarWidth }: Props = $props();
-	let mapElement = $state<HTMLDivElement | null>(null);
-	let map = $state<Leaflet.Map | null>(null);
-	let markers = $state<Leaflet.Marker[]>([]);
-	let markersById = $state<Record<string, any>>({});
+	let {
+		places,
+		selectedId = null,
+		theme = 'dark',
+		selection = {},
+		paddingLeft = 0,
+		onselect = () => {}
+	}: Props = $props();
 
-	let isPickupsUpdated = $state(false);
+	const SELECT_RING = { dark: '#f4f4f5', light: '#1d1d1f' };
+
+	const SAO_PAULO: Leaflet.LatLngTuple = [-23.5505, -46.6333];
+
+	let container = $state<HTMLDivElement | null>(null);
+	let leaflet = $state.raw<typeof import('leaflet') | null>(null);
+	let map = $state.raw<Leaflet.Map | null>(null);
+	let markers = $state.raw(new Map<string, Leaflet.CircleMarker>());
+	let fitted = false;
 
 	$effect(() => {
-		if (pickups.length > 0) {
-			isPickupsUpdated = true;
-		}
+		const node = container;
+		if (!node) return;
+
+		let cancelled = false;
+		let instance: Leaflet.Map | null = null;
+		let observer: ResizeObserver | null = null;
+
+		void import('leaflet').then((L) => {
+			if (cancelled) return;
+
+			instance = L.map(node, { zoomControl: false }).setView(SAO_PAULO, 11);
+			L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; OpenStreetMap',
+				maxZoom: 19
+			}).addTo(instance);
+			instance.attributionControl.setPrefix(false);
+			observer = new ResizeObserver(() => instance?.invalidateSize());
+			observer.observe(node);
+
+			leaflet = L;
+			map = instance;
+		});
+
+		return () => {
+			cancelled = true;
+			observer?.disconnect();
+			instance?.remove();
+			map = null;
+			leaflet = null;
+			fitted = false;
+		};
 	});
 
 	$effect(() => {
-		if (focusedPickupId) {
-			if (map && markersById[focusedPickupId]) {
-				const marker = markersById[focusedPickupId];
-				const latlng = marker.getLatLng();
-				map.setView(latlng, 16, { animate: true });
-				marker.openPopup();
+		const L = leaflet;
+		const instance = map;
+		if (!L || !instance) return;
 
-				if (sidebarWidth) {
-					// Calculate the offset to center the marker in the visible map area
-					const mapSize = map.getSize();
-					const point = map.project(latlng, map.getZoom());
-					const offsetX = sidebarWidth / 2 - mapSize.x / 2;
-					const centerPoint = point.subtract([offsetX, 0]);
-					const centerLatLng = map.unproject(centerPoint, map.getZoom());
+		const group = L.layerGroup().addTo(instance);
+		const created = new Map<string, Leaflet.CircleMarker>();
 
-					setTimeout(() => {
-						map!.panTo(centerLatLng, { animate: true });
-					}, 400);
-				}
+		for (const place of places) {
+			const level = stockLevel(place, selection);
+
+			const marker = L.circleMarker([place.address.latitude, place.address.longitude], {
+				radius: level === 0 ? 4 : 5.5,
+				color: STOCK_LEVEL_COLOR[level],
+				weight: 2,
+				fillColor: STOCK_LEVEL_COLOR[level],
+				fillOpacity: level === 0 ? 0 : 1
+			})
+				.on('click', () => onselect(place.id))
+				.addTo(group);
+
+			created.set(place.id, marker);
+		}
+
+		markers = created;
+
+		if (!fitted && places.length > 0) {
+			instance.fitBounds(
+				L.latLngBounds(
+					places.map((place) => [place.address.latitude, place.address.longitude])
+				).pad(0.1),
+				{ paddingTopLeft: [paddingLeft, 0] }
+			);
+			fitted = true;
+		}
+
+		return () => {
+			group.remove();
+			markers = new Map();
+		};
+	});
+
+	$effect(() => {
+		const ring = SELECT_RING[theme];
+
+		for (const place of places) {
+			const selected = place.id === selectedId;
+			const marker = markers.get(place.id);
+			if (!marker) continue;
+
+			const level = stockLevel(place, selection);
+			const color = STOCK_LEVEL_COLOR[level];
+
+			marker.setStyle({
+				radius: selected ? 8 : level === 0 ? 4 : 5.5,
+				weight: selected ? 3.5 : 2,
+				color: selected ? ring : color,
+				fillColor: color,
+				fillOpacity: level === 0 ? 0 : 1
+			});
+
+			marker.unbindTooltip();
+			if (selected) {
+				marker
+					.bindTooltip(`${totalUnits(place)} un.`, {
+						permanent: true,
+						direction: 'bottom',
+						offset: [0, 6],
+						className: 'sp-pin-label'
+					})
+					.openTooltip();
 			}
 		}
 	});
 
-	onMount(() => {
-		if (window?.L && mapElement) {
-			const L: typeof import('leaflet') = window.L;
-
-			map = L.map(mapElement, {
-				zoomControl: false // Disable default zoom control
-			}).setView([-23.55052, -46.633308], 11);
-
-			// Add grayscale tile layer
-			L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-				attribution:
-					'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-				subdomains: 'abcd',
-				maxZoom: 19
-			}).addTo(map);
-
-			// Add zoom control to the right side
-			L.control
-				.zoom({
-					position: 'topright'
-				})
-				.addTo(map);
-
-			const resizeObserver = new ResizeObserver(() => {
-				if (map) {
-					map.invalidateSize();
-				}
-			});
-			resizeObserver.observe(mapElement);
-
-			return () => {
-				resizeObserver.disconnect();
-				map?.remove();
-				map = null;
-			};
-		}
-	});
-
 	$effect(() => {
-		if (map && isPickupsUpdated) {
-			isPickupsUpdated = false;
-			markers.forEach((m) => map?.removeLayer(m));
-			markers = [];
-			markersById = {};
+		const instance = map;
+		const id = selectedId;
+		if (!instance || !id) return;
 
-			const L = window.L;
-			const blackIcon = L.icon({
-				iconUrl:
-					'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png',
-				shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-				iconSize: [25, 41],
-				iconAnchor: [12, 41],
-				popupAnchor: [1, -34],
-				shadowSize: [41, 41]
-			});
+		const marker = markers.get(id);
+		if (!marker) return;
 
-			// Create new markers array and object
-			const newMarkers: Leaflet.Marker[] = [];
-			const newMarkersById: Record<string, any> = {};
+		const zoom = Math.max(instance.getZoom(), 13);
+		const point = instance.project(marker.getLatLng(), zoom).subtract([paddingLeft / 2, 0]);
 
-			pickups.forEach((pickup) => {
-				const marker = L.marker([pickup.latitude, pickup.longitude], {
-					icon: blackIcon
-				}).addTo(map!);
-				marker.bindPopup(`<strong>${pickup.name}</strong><br>${pickup.address}`);
-				marker.on('click', () => {
-					focusedPickupId = pickup.id;
-				});
-				newMarkers.push(marker);
-				newMarkersById[pickup.id] = marker;
-			});
-
-			markers = newMarkers;
-			markersById = newMarkersById;
-		}
+		instance.flyTo(instance.unproject(point, zoom), zoom, { duration: 0.6 });
 	});
 </script>
 
-<svelte:head>
-	<!-- Leaflet CSS -->
-	<link
-		rel="stylesheet"
-		href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-		crossorigin=""
-	/>
-
-	<!-- Leaflet JavaScript -->
-	<script
-		src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-		crossorigin=""
-	></script>
-</svelte:head>
-
-<div bind:this={mapElement} id="map"></div>
+<div bind:this={container} class="sp-map isolate h-full w-full"></div>
 
 <style>
-	/* Make map container take up 100% of the viewport */
-	#map {
-		height: 100dvh;
-		width: 100%;
-		position: relative;
-		z-index: 0;
+	:global(.sp-map .leaflet-tile-pane) {
+		filter: var(--map-filter);
+	}
+
+	:global(.sp-pin-label) {
+		background: var(--color-surface);
+		border: none;
+		border-radius: var(--radius-pill);
+		box-shadow: none;
+		color: var(--color-ink);
+		font-size: 12px;
+		font-weight: 600;
+		padding: 2px 8px;
+	}
+
+	:global(.sp-pin-label::before) {
+		display: none;
+	}
+
+	:global(.leaflet-container) {
+		background: var(--map-bg);
+		font-family: inherit;
+	}
+
+	:global(.leaflet-control-attribution) {
+		background: transparent;
+		color: var(--color-faint);
+		font-size: 10px;
+	}
+
+	:global(.leaflet-control-attribution a) {
+		color: var(--color-faint);
+	}
+
+	/* no mobile o sheet cobre o rodapé: crédito sobe para ficar visível */
+	@media (max-width: 767px) {
+		:global(.leaflet-bottom.leaflet-right) {
+			bottom: calc(32dvh + 3.25rem);
+		}
 	}
 </style>
