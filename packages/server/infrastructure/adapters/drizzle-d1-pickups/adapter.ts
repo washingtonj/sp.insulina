@@ -1,6 +1,8 @@
 import type { PickupEntity } from "domain/entities";
 import type {
+  AvailabilitySeriesRow,
   PickupRepository,
+  BestDayRow,
   getAvailabilitiesTypes,
 } from "domain/interfaces/pickup-repository";
 import { DrizzleD1Database } from "drizzle-orm/d1";
@@ -180,6 +182,96 @@ export function pickupRepositoryWithD1(
         acc[pickupId][checkedAt] = data;
         return acc;
       }, {} as any) satisfies getAvailabilitiesTypes["response"];
+    },
+
+    async getAvailabilitySeries(args) {
+      const pickupFilter = args.pickupId
+        ? sql`AND p.uuid = ${args.pickupId}`
+        : sql``;
+
+      const rows = await drizzleDb.all<AvailabilitySeriesRow>(sql`
+        WITH ranked AS (
+          SELECT a.pickup_id AS pickup_id,
+                 date(a.checked_at, '-3 hours') AS day,
+                 a.data AS data,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY a.pickup_id, date(a.checked_at, '-3 hours')
+                   ORDER BY a.checked_at DESC
+                 ) AS position
+          FROM availabilities a
+          JOIN pickups p ON p.id = a.pickup_id
+          WHERE a.checked_at >= ${args.startDate.toISOString()}
+            AND a.checked_at <= ${args.endDate.toISOString()}
+            ${pickupFilter}
+        )
+        SELECT r.day AS day,
+               i.type AS type,
+               i.variant AS variant,
+               COUNT(*) FILTER (WHERE json_extract(j.value, '$.quantity') > 0) AS pickupsWithStock,
+               COALESCE(SUM(json_extract(j.value, '$.quantity')), 0) AS totalQuantity,
+               COUNT(*) AS pickupsReported
+        FROM ranked r
+        CROSS JOIN json_each(r.data) j
+        JOIN insulins i ON i.code = json_extract(j.value, '$.insulinCode')
+        WHERE r.position = 1
+        GROUP BY r.day, i.type, i.variant
+        ORDER BY r.day, i.type, i.variant
+      `);
+
+      return rows;
+    },
+
+    async getBestDayProfile(args) {
+      const rows = await drizzleDb.all<BestDayRow>(sql`
+        WITH readings AS (
+          SELECT a.pickup_id AS pickup_id,
+                 a.checked_at AS checked_at,
+                 date(a.checked_at, '-3 hours') AS day,
+                 SUM(CAST(json_extract(j.value, '$.quantity') AS INTEGER)) AS units
+          FROM availabilities a
+          CROSS JOIN json_each(a.data) j
+          JOIN insulins i ON i.code = json_extract(j.value, '$.insulinCode')
+          WHERE a.checked_at >= ${args.startDate.toISOString()}
+            AND a.checked_at <= ${args.endDate.toISOString()}
+            AND i.type IN ('REFILL', 'AMPOLA')
+          GROUP BY a.pickup_id, a.checked_at, day
+        ),
+        daily AS (
+          SELECT pickup_id, day, units,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY pickup_id, day
+                   ORDER BY checked_at DESC
+                 ) AS position
+          FROM readings
+        ),
+        best_days AS (
+          SELECT pickup_id,
+                 CAST(strftime('%d', day) AS INTEGER) AS day_of_month,
+                 AVG(units) AS average_units,
+                 COUNT(*) AS samples
+          FROM daily
+          WHERE position = 1
+          GROUP BY pickup_id, day_of_month
+        ),
+        ranked AS (
+          SELECT pickup_id, day_of_month, average_units, samples,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY pickup_id
+                   ORDER BY average_units DESC, day_of_month
+                 ) AS place
+          FROM best_days
+        )
+        SELECT p.uuid AS uuid,
+               r.day_of_month AS dayOfMonth,
+               CAST(ROUND(r.average_units) AS INTEGER) AS averageUnits,
+               r.samples AS samples
+        FROM ranked r
+        JOIN pickups p ON p.id = r.pickup_id
+        WHERE r.place = 1
+        ORDER BY p.uuid
+      `);
+
+      return rows;
     },
   };
 }

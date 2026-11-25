@@ -9,6 +9,7 @@ export class PickupEntity {
   address!: AddressEntity;
   availability!: AvailabilityEntity[];
   businessHours!: BusinessHourEntity[];
+  checkedAt?: string;
 
   constructor(data: WithoutMethods<PickupEntity>) {
     this.id = data.id;
@@ -18,6 +19,7 @@ export class PickupEntity {
     this.businessHours = data.businessHours.map(
       (bh) => new BusinessHourEntity(bh),
     );
+    this.checkedAt = data.checkedAt;
   }
 
   withDistance(location: { lat: number; lng: number }): PickupEntity {
@@ -42,7 +44,8 @@ export class PickupEntity {
   isWeekendOpen(): boolean {
     const weekendDays = [6, 0]; // Saturday = 6, Sunday = 0
     return this.businessHours.some(
-      (bh) => weekendDays.includes(bh.dayOfWeek) && bh.hours.length > 0,
+      (bh) =>
+        weekendDays.includes(bh.dayOfWeek) && bh.hours[0] !== bh.hours[1],
     );
   }
 

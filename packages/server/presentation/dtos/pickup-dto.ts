@@ -103,5 +103,6 @@ export function fromPickupEntityToDTO(pickup: PickupEntity): PickupDTO {
     businessHourTags: getBusinessHourTags(pickup),
     is24HoursOpen: pickup.is24Hours(),
     isWeekendOpen: pickup.isWeekendOpen(),
+    checkedAt: pickup.checkedAt,
   };
 }
