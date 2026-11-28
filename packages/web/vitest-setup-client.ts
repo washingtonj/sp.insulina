@@ -16,3 +16,11 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 // add more mocks here if you need them
+
+class ResizeObserverMock {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
+
+globalThis.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
